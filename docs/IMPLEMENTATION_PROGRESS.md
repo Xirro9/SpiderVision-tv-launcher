@@ -99,8 +99,16 @@ Verified on the TV (2026-11-02, scripted remote presses):
   the app. "Later" correctly disabled on the last favourite.
 - HOME still `launcherx`, 19 disabled packages, no permissions requested.
 
-Not yet verified: persistence across a **TV reboot** (needs a reboot; DataStore is app-private
-storage, so it is expected to hold). Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
+TV reboot (2026-11-02 23:08, with the owner's go-ahead): before, Aria active with Larger text on.
+After boot (wireless ADB reconnected on its own, ~20 s to `boot_completed`), SpiderVision opened
+with Aria active and her Prime Video pick; the saved file still had `aria.largeText = true`.
+HOME (`launcherx`), Private DNS (`hostname`) and the 19 disabled packages were unchanged.
+Cold start after reboot: 393 ms reported by `am start -W` (Activity only; process was pre-warmed).
+
+Testing note: a scripted OK press sent before the board had focus opened Netflix (nothing
+played). Scripts now read the selected item before pressing OK.
+
+Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
 
 ## Phases 4–7
 
