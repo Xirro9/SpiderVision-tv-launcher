@@ -28,15 +28,23 @@
         android:supportsRtl="false"
         android:theme="@style/Theme.SpiderVision">
 
-        <!-- Normal TV app entry only. HOME is deliberately NOT claimed (Phase 6, needs approval). -->
+        <!-- A normal TV app, and (Phase 6, owner-approved) a Home candidate. Declaring HOME does not
+             change the TV's Home app by itself; that is the HOME role, set separately and reversibly
+             (docs/HOME_EXPERIMENT.md). singleTask: the Home key returns to this one instance. -->
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 

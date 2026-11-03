@@ -97,6 +97,7 @@ import com.spidervision.tv.profiles.DEFAULT_PROFILES
 import com.spidervision.tv.profiles.LauncherStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -147,7 +148,7 @@ class UiMessages {
 fun appName(pkg: String, installed: Map<String, InstalledApp>) = BRAND_BY_PKG[pkg]?.name ?: installed[pkg]?.label ?: "This app"
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
@@ -231,6 +232,17 @@ fun HomeScreen() {
     }
 
     BackHandler(enabled = showAllApps) { showAllApps = false }
+    // As the TV's Home app there is nothing "behind" the board: Back there does nothing.
+    BackHandler(enabled = !showAllApps && isHomeApp()) { }
+    // Home key while already showing: close All apps and go back to the cover.
+    val homeTick by homePresses.collectAsState()
+    LaunchedEffect(homeTick) {
+        if (homeTick > 0) {
+            showAllApps = false
+            lastFocus[0] = "cover"
+            restoreFocus()
+        }
+    }
     LaunchedEffect(showAllApps) { if (!showAllApps) restoreFocus() }
 
     val prefs = saved ?: run { Box(Modifier.fillMaxSize().background(C.bg)); return }

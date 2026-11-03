@@ -40,4 +40,4 @@ Legend: ✅ pass · ❌ fail · ⏳ not yet run · — not applicable yet
 | Reboot: remote, audio, HDMI, casting, playback OK | ⏳ | 2026-11-02 | rebooted once: ADB, HOME, DNS, disabled set OK; remote in use after boot; audio/HDMI/casting/playback not yet checked |
 | 20-minute navigation soak: no crash/ANR/growth | ⏳ partial | 2026-11-03 | stopped at ~6 min by the owner: 448 presses, no crash, 39–42 MB flat |
 | Force-stop Orrery → stock home still reachable | ⏳ | | |
-| HOME replacement only with approval + proven rollback | — | | Phase 6 |
+| HOME replacement only with approval + proven rollback | ✅ | 2026-11-03 | approved, backed up, failed on firmware, rollback script verified against backup |

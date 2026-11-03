@@ -137,9 +137,16 @@ New permission: `INTERNET` (only for NextDNS).
 
 Full numbers: `docs/PERFORMANCE.md`.
 
-## Phases 6–7
+## Phase 6 — HOME replacement experiment
 
-Pending. See the guide for exit gates.
+Done with owner approval, then rolled back: the firmware keeps the Home button on Google TV's own
+system Home activities (`launcherx`, then `setupwraith`) regardless of the HOME role. Backup and
+verified rollback in `platform-toolsackup-2026-11-03_home-phase6`. Details:
+`docs/HOME_EXPERIMENT.md`. Next option (disable `setupwraith` too) awaits a separate decision.
+
+## Phase 7
+
+Pending.
 
 ## Device facts that shape the build
 
