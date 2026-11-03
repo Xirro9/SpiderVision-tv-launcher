@@ -1,0 +1,9 @@
+Philips/SW10_Philips/eleonas:14/UKN7.260716.014/16009744:user/release-keys
+UKN7.260716.014
+14
+34
+Philips-24NA-4K
+armeabi-v7a,armeabi
+Physical size: 3840x2160
+Override size: 1920x1080
+Physical density: 320

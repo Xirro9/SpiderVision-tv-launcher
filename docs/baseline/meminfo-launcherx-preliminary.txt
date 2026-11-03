@@ -1,0 +1,103 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 7133601 Realtime: 7133601
+
+** MEMINFO in pid 2338 [com.google.android.apps.tv.launcherx] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    13632    11332     2284    30287    14260    83644    36333    37614
+  Dalvik Heap    23046    17808     5160     1880    23628    36911    18456    18455
+ Dalvik Other     3886     3380      236      169     4360                           
+        Stack      656      528      128      992      656                           
+       Ashmem        0        0        0        0       84                           
+    Other dev        4        0        4        0      308                           
+     .so mmap     2211       64      112      224    25120                           
+    .jar mmap     1394        0        0        0    29024                           
+    .apk mmap     2850        0     1320      100     4872                           
+    .ttf mmap      112        0      112        0      112                           
+    .dex mmap       15        0        8       36      636                           
+    .oat mmap      407        0        0        0    10712                           
+    .art mmap     6128     2272     3260      442    16892                           
+   Other mmap     2120       24      760        8     3776                           
+      Unknown      293      240       52      372      464                           
+        TOTAL    91264    35648    13436    34510   134904   120555    54789    56069
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    23340                          40520
+         Native Heap:    11332                          14260
+                Code:     1944                          71332
+               Stack:      528                            656
+            Graphics:        0                              0
+       Private Other:    11940
+              System:    42180
+             Unknown:                                    8136
+ 
+           TOTAL PSS:    91264            TOTAL RSS:   134904       TOTAL SWAP PSS:    34510
+ 
+ Objects
+               Views:      389         ViewRootImpl:        1
+         AppContexts:       24           Activities:        1
+              Assets:       38        AssetManagers:        0
+       Local Binders:      110        Proxy Binders:       53
+       Parcel memory:       27         Parcel count:       89
+    Death Recipients:        1             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:     1926
+  PAGECACHE_OVERFLOW:      420          MALLOC_SIZE:      238
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       24             78     2    39     4  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/1_per_account_gnp_room.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/1_per_account_gnp_room.db (1)
+         4       24             30     2    38     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/device_level_room_notifications.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/device_level_room_notifications.db (1)
+         4       24             30     2    38     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/2_room_notifications.db
+         4        8                    0     0     0    (attached) temp
+         4       24             50    21    27     4  /data/user/0/com.google.android.apps.tv.launcherx/databases/2_room_notifications.db (1)
+         4       24             78     2    39     4  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/4_per_account_gnp_room.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/4_per_account_gnp_room.db (1)
+         4       24             30     2    38     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/3_room_notifications.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/3_room_notifications.db (1)
+         4       28             31     6    42     3  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_per_device_database
+         4        8                    0     0     0    (attached) temp
+         4       28             52     3    27     4  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_per_device_database (1)
+         4       24             30     2    38     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/4_room_notifications.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/4_room_notifications.db (1)
+         4       28             17     0    32     1  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_fcm_database
+         4        8                    0     0     0    (attached) temp
+         4       28             90    24    28     5  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_fcm_database (1)
+         4      104             60   379   192    25  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/androidx.work.workdb
+         4        8                    0     0     0    (attached) temp
+         4      104             65    28    31     7  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/androidx.work.workdb (1)
+         4       24             30     2    38     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/1_room_notifications.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/databases/1_room_notifications.db (1)
+         4       24             78     2    39     4  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/3_per_account_gnp_room.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/3_per_account_gnp_room.db (1)
+         4       24             78     2    39     4  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/2_per_account_gnp_room.db
+         4        8                    0     0     0    (attached) temp
+         4       24             30     2    26     3  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/2_per_account_gnp_room.db (1)
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+              4            69            73  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/1_per_account_gnp_room.db
+              4            68            72  /data/user/0/com.google.android.apps.tv.launcherx/databases/device_level_room_notifications.db
+             23            69            92  /data/user/0/com.google.android.apps.tv.launcherx/databases/2_room_notifications.db
+              4            69            73  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/4_per_account_gnp_room.db
+              4            68            72  /data/user/0/com.google.android.apps.tv.launcherx/databases/3_room_notifications.db
+              9            73            82  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_per_device_database
+              4            68            72  /data/user/0/com.google.android.apps.tv.launcherx/databases/4_room_notifications.db
+             24            64            88  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/gnp_fcm_database
+            407           227           634  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/androidx.work.workdb
+              4            68            72  /data/user/0/com.google.android.apps.tv.launcherx/databases/1_room_notifications.db
+              4            69            73  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/3_per_account_gnp_room.db
+              4            69            73  /data/user/0/com.google.android.apps.tv.launcherx/no_backup/databases/2_per_account_gnp_room.db

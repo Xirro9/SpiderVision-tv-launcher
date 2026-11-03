@@ -1,0 +1,22 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing material and secrets — never commit
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+
+# Prototype dependencies
+references/magicpath-original/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

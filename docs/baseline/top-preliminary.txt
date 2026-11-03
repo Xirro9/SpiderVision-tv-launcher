@@ -1,0 +1,25 @@
+Tasks: 413 total,   1 running, 412 sleeping,   0 stopped,   0 zombie
+  Mem:  1840776K total,  1675488K used,   165288K free,      904K buffers
+ Swap:  1023996K total,   820616K used,   203380K free,   369956K cached
+400%cpu  60%user   0%nice 111%sys 217%idle   0%iow   9%irq   3%sirq   0%host
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+ 966 shell        20   0  17M 3.4M 2.6M R 28.5   0.1   0:00.10 top -b -n 1 -m 20
+1034 u0_a68       10 -10 1.3G 157M 113M S 28.5   8.7  15:35.56 com.google.android.apps.tv.dreamx
+ 483 root         RT   0    0    0    0 S 20.0   0.0   6:33.38 [pqu_pq_vsync_th]
+ 613 system       -3  -8  93M  19M  16M S 17.1   1.0  11:55.66 surfaceflinger
+ 589 system       -3   0 113M  10M 5.5M S 17.1   0.5  10:25.34 hwcomposer.merak
+1447 u0_a101      20   0 1.2G  73M  51M S 11.4   4.0   9:15.72 com.mediatek.tv.agent
+1556 system       20   0 1.1G  58M  38M S  5.7   3.2   3:30.75 com.smartdevice.global.service
+1020 system       18  -2 2.4G 266M 205M S  5.7  14.8   7:04.32 system_server
+ 486 root         RT   0    0    0    0 S  5.7   0.0   1:49.59 [pqu_module]
+2464 u0_a141      20   0 1.9G  79M  41M S  2.8   4.4   1:41.63 com.spotify.tv.android
+3538 u0_a86       20   0 1.5G  70M  57M S  2.8   3.8   2:03.72 com.netflix.ninja
+ 663 vendor_cpu_audio 20 0 64M 1.5M 1.4M S 2.8   0.0   1:13.78 cpu_audio
+ 659 mdnsr        20   0  17M 1.8M 1.6M S  2.8   0.1   0:02.82 mdnsd
+ 580 root         RT   0    0    0    0 D  2.8   0.0   0:55.92 [crtc1_thread]
+ 569 root         RT   0    0    0    0 S  2.8   0.0   0:16.50 [irq/82-DRM_MTK_]
+ 531 system       20   0  25M 1.9M 1.9M S  2.8   0.1   0:19.49 android.hardware.tv.hdmi.earc-service.mediatek
+ 513 root         RT   0    0    0    0 D  2.8   0.0   0:59.66 [pre_signal_task]
+ 476 root         RT   0    0    0    0 S  2.8   0.0   0:30.85 [pqu_vsync_legac]
+ 212 logd         30  10  34M 4.5M 2.8M S  2.8   0.2   0:49.49 logd
+ 451 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/1:2-mm_percpu_wq]
