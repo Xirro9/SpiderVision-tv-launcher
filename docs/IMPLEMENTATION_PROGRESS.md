@@ -120,7 +120,7 @@ Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
 | Honest states | done | not linked / loading / live / offline with cached numbers / check key; empty chart frame when no data |
 | Refresh only while visible | done | 10 min interval, exponential backoff, no service |
 | Tested on TV | partial | not linked ✅, malformed key rejected ✅, fake key → "NextDNS rejected the saved key" via a real API call ✅, key absent from logcat ✅, unlink ✅ |
-| Verified against NextDNS web | open | needs the owner to link the real key (see `docs/NEXTDNS.md`) |
+| Verified against NextDNS web | deferred | owner's first link attempt never reached the TV (script hardened since); owner chose to skip linking for now (2026-11-02). Tile stays "NOT LINKED" |
 
 New permission: `INTERNET` (only for NextDNS).
 
