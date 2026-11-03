@@ -1,6 +1,7 @@
 package com.spidervision.tv.ui
 
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,13 +34,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -101,6 +105,14 @@ fun T(
 
 private fun Modifier.at(c: Cell) = cell(c.colStart, c.colEnd, c.rowStart, c.rowEnd)
 
+/** Footer text: the selected item, or a short-lived message. Its own scope so focus moves don't recompose the board. */
+class UiMessages {
+    var focused by mutableStateOf("")
+    var status by mutableStateOf<String?>(null)
+}
+
+private val PANEL_IDS = listOf("cover", "net", "settings", "inputs", "allapps") + (0..5).map { "w$it" } + (0..3).map { "f$it" }
+
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
@@ -110,34 +122,73 @@ fun HomeScreen() {
     var installed by remember { mutableStateOf<Map<String, InstalledApp>>(emptyMap()) }
     var dns by remember { mutableStateOf(DnsStatus("", "")) }
     var now by remember { mutableStateOf(LocalDateTime.now()) }
-    var focusedLabel by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
+    var showAllApps by remember { mutableStateOf(false) }
+    val ui = remember { UiMessages() }
     val customIcons = true // icon-style switch arrives with settings in Phase 3
+
+    val req = remember { PANEL_IDS.associateWith { FocusRequester() } }
+    val chipReq = remember { DEFAULT_PROFILES.associate { it.id to FocusRequester() } }
+    // Last focused home panel; plain (non-state) so focus moves never trigger recomposition.
+    val lastFocus = remember { arrayOf("cover") }
+    val restoreFocus: suspend () -> Unit = {
+        withFrameNanos { } // let the board compose first
+        val r = req[lastFocus[0]] ?: req.getValue("cover")
+        if (runCatching { r.requestFocus() }.getOrDefault(false) == false) runCatching { req.getValue("cover").requestFocus() }
+    }
 
     // Refresh the real app list, DNS mode and clock only while the screen is in front.
     LaunchedEffect(Unit) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             installed = AppCatalog.loadInstalled(context)
             dns = DnsStatusReader.read(context)
+            if (!showAllApps) restoreFocus()
             while (true) {
                 now = LocalDateTime.now()
                 delay(60_000L - System.currentTimeMillis() % 60_000L)
             }
         }
     }
-    LaunchedEffect(status) {
-        if (status != null) { delay(3200); status = null }
-    }
+
+    BackHandler(enabled = showAllApps) { showAllApps = false }
+    LaunchedEffect(showAllApps) { if (!showAllApps) restoreFocus() }
 
     val profile = DEFAULT_PROFILES.first { it.id == profileId }
     val isInstalled = { b: Brand -> installed.containsKey(b.pkg) }
-    val watchApps = (DEFAULT_FAVORITE_APPS + DEFAULT_APP_ORDER).distinct()
-        .mapNotNull { BRAND_BY_KEY[it] }.filter(isInstalled).take(6)
+    val appOrder = (DEFAULT_FAVORITE_APPS + DEFAULT_APP_ORDER).distinct()
+    val watchApps = appOrder.mapNotNull { BRAND_BY_KEY[it] }.filter(isInstalled).take(6)
     val coverBrand = BRAND_BY_KEY.getValue(profile.coverApp)
-    val launch = { b: Brand -> status = AppCatalog.launch(context, b.pkg, b.name) }
-    val coverFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { coverFocus.requestFocus() } }
-    val onFocusLabel = { s: String -> focusedLabel = s }
+    val launch = { b: Brand -> ui.status = AppCatalog.launch(context, b.pkg, b.name) }
+    val onFocusLabel = { s: String -> ui.focused = s }
+
+    if (showAllApps) {
+        AllAppsBoard(installed, appOrder, DEFAULT_FAVORITE_APPS, customIcons, ui) { app -> ui.status = AppCatalog.launch(context, app.pkg, app.label) }
+        return
+    }
+
+    // Board cells → deterministic D-pad neighbours.
+    val cells = buildMap {
+        put("cover", Cell(1, 5, 1, 7))
+        watchApps.indices.forEach { put("w$it", WATCH_CELLS[it]) }
+        FAV_CELLS.forEachIndexed { i, c -> put("f$i", c) }
+        put("net", Cell(10, 13, 1, 4))
+        put("settings", Cell(10, 12, 4, 6))
+        put("inputs", Cell(12, 13, 4, 6))
+        put("allapps", Cell(10, 13, 6, 7))
+    }
+    val neighbors = computeNeighbors(cells)
+    fun Modifier.nav(id: String): Modifier {
+        val c = cells.getValue(id)
+        val n = neighbors.getValue(id)
+        return this.at(c)
+            .focusRequester(req.getValue(id))
+            .focusProperties {
+                left = n.left?.let(req::getValue) ?: FocusRequester.Cancel
+                right = n.right?.let(req::getValue) ?: FocusRequester.Cancel
+                up = n.up?.let(req::getValue) ?: if (c.rowStart == 1) chipReq.getValue(profileId) else FocusRequester.Cancel
+                down = n.down?.let(req::getValue) ?: FocusRequester.Cancel
+            }
+            .onFocusChanged { if (it.isFocused) lastFocus[0] = id }
+    }
 
     Box(Modifier.fillMaxSize().background(C.bg)) {
         Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).halftone(C.halftonePage, 5.5.dp, 1.2.dp))
@@ -156,10 +207,18 @@ fun HomeScreen() {
                 }
                 Spacer(Modifier.width(23.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    DEFAULT_PROFILES.forEach { p ->
-                        ProfileChip(p.name, p.color, p.id == profileId, onFocusLabel) {
+                    DEFAULT_PROFILES.forEachIndexed { i, p ->
+                        val chipNav = Modifier
+                            .focusRequester(chipReq.getValue(p.id))
+                            .focusProperties {
+                                up = FocusRequester.Cancel
+                                down = req.getValue("cover")
+                                if (i == 0) left = FocusRequester.Cancel
+                                if (i == DEFAULT_PROFILES.lastIndex) right = FocusRequester.Cancel
+                            }
+                        ProfileChip(p.name, p.color, p.id == profileId, onFocusLabel, chipNav) {
                             profileId = p.id
-                            status = "Switched to ${p.name}"
+                            ui.status = "Switched to ${p.name}"
                         }
                     }
                 }
@@ -176,21 +235,21 @@ fun HomeScreen() {
 
             // ---------- Comic page ----------
             BoardGrid(12, 6, 7.7.dp, Modifier.weight(1f).fillMaxWidth()) {
-                CoverPanel(coverBrand, profile.name, isInstalled(coverBrand), coverFocus, onFocusLabel) { launch(coverBrand) }
+                CoverPanel(coverBrand, profile.name, isInstalled(coverBrand), Modifier.nav("cover"), onFocusLabel) { launch(coverBrand) }
 
                 watchApps.forEachIndexed { i, b ->
-                    WatchPanel(b, i, customIcons, Modifier.at(WATCH_CELLS[i]), onFocusLabel) { launch(b) }
+                    WatchPanel(b, i, customIcons, Modifier.nav("w$i"), onFocusLabel) { launch(b) }
                 }
 
                 profile.pins.forEachIndexed { i, key ->
                     val b = BRAND_BY_KEY.getValue(key)
-                    PinPanel(b, i, profile.name, customIcons, isInstalled(b), Modifier.at(FAV_CELLS[i]), onFocusLabel) { launch(b) }
+                    PinPanel(b, i, profile.name, customIcons, isInstalled(b), Modifier.nav("f$i"), onFocusLabel) { launch(b) }
                 }
 
-                NetworkPanel(dns, Modifier.at(Cell(10, 13, 1, 4)), onFocusLabel) {
-                    status = "Live NextDNS stats aren't connected yet"
+                NetworkPanel(dns, Modifier.nav("net"), onFocusLabel) {
+                    ui.status = "Live NextDNS stats aren't connected yet"
                 }
-                Panel("Settings — press OK to open", Modifier.at(Cell(10, 12, 4, 6)), C.surface, onFocusLabel, { status = "Launcher settings arrive in a later build" }) {
+                Panel("Settings — launcher settings arrive in Phase 3", Modifier.nav("settings"), C.surface, onFocusLabel, { ui.status = "Launcher settings arrive in Phase 3" }) {
                     Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
                         StrokeIcon(Icons.gear, C.silver, 19.2.dp)
                         Column {
@@ -200,17 +259,17 @@ fun HomeScreen() {
                         }
                     }
                 }
-                Panel("Inputs — press OK to switch source", Modifier.at(Cell(12, 13, 4, 6)), C.surface, onFocusLabel, { status = "Input switching arrives in a later build" }) {
+                Panel("Inputs — press OK to choose HDMI or another TV source", Modifier.nav("inputs"), C.surface, onFocusLabel, { ui.status = AppCatalog.openInputPicker(context) }) {
                     Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
                         StrokeIcon(Icons.tv, C.silver, 19.2.dp)
                         Column {
                             T("Inputs", 11.5.sp, weight = 700)
                             Spacer(Modifier.height(3.dp))
-                            T("TV sources", 7.7.sp, color = C.silver)
+                            T("HDMI & TV", 7.7.sp, color = C.silver)
                         }
                     }
                 }
-                Panel("All apps — press OK to browse", Modifier.at(Cell(10, 13, 6, 7)), C.surface, onFocusLabel, { status = "The full app board arrives in the next build" }) {
+                Panel("All apps — press OK to see every app on this TV", Modifier.nav("allapps"), C.surface, onFocusLabel, { showAllApps = true }) {
                     Row(Modifier.fillMaxSize().padding(horizontal = PAD, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         StrokeIcon(Icons.grid, C.silver, 17.3.dp)
                         Spacer(Modifier.width(8.dp))
@@ -221,21 +280,29 @@ fun HomeScreen() {
                 }
             }
 
-            // ---------- Footer ----------
-            Spacer(Modifier.height(10.8.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(C.rule))
-            Spacer(Modifier.height(8.6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) {
-                    val s = status
-                    if (s != null) SpeechBubble(s) else T(focusedLabel, 8.6.sp, weight = 600)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Key("◀ ▲ ▼ ▶"); T("Move", 8.6.sp, color = C.silver)
-                    Key("OK"); T("Open", 8.6.sp, color = C.silver)
-                    Key("Back"); T("Close", 8.6.sp, color = C.silver)
-                }
-            }
+            Footer(ui)
+        }
+    }
+}
+
+/** Divider + selected-item line + remote key legend. */
+@Composable
+fun Footer(ui: UiMessages) {
+    LaunchedEffect(ui.status) {
+        if (ui.status != null) { delay(3200); ui.status = null }
+    }
+    Spacer(Modifier.height(10.8.dp))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(C.rule))
+    Spacer(Modifier.height(8.6.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) {
+            val s = ui.status
+            if (s != null) SpeechBubble(s) else T(ui.focused, 8.6.sp, weight = 600)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Key("◀ ▲ ▼ ▶"); T("Move", 8.6.sp, color = C.silver)
+            Key("OK"); T("Open", 8.6.sp, color = C.silver)
+            Key("Back"); T("Close", 8.6.sp, color = C.silver)
         }
     }
 }
@@ -244,14 +311,13 @@ fun HomeScreen() {
 @Composable
 fun Panel(
     label: String, modifier: Modifier, bg: Color, onFocusLabel: (String) -> Unit, onClick: () -> Unit,
-    focusRequester: FocusRequester? = null, content: @Composable BoxScope.() -> Unit,
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
     LaunchedEffect(focused, label) { if (focused) onFocusLabel(label) }
     Box(
         modifier
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .focusRing(focused)
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .clip(PANEL_SHAPE)
@@ -262,7 +328,7 @@ fun Panel(
 }
 
 @Composable
-private fun CoverPanel(brand: Brand, profileName: String, installed: Boolean, focus: FocusRequester, onFocusLabel: (String) -> Unit, onClick: () -> Unit) {
+private fun CoverPanel(brand: Brand, profileName: String, installed: Boolean, modifier: Modifier, onFocusLabel: (String) -> Unit, onClick: () -> Unit) {
     val context = LocalContext.current
     // Decoded once at near display size, 16-bit, to keep memory low.
     val art = remember {
@@ -271,8 +337,8 @@ private fun CoverPanel(brand: Brand, profileName: String, installed: Boolean, fo
             BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 },
         ).asImageBitmap()
     }
-    val label = if (installed) "${brand.name} — press OK to open" else "${brand.name} isn't installed on this TV"
-    Panel(label, Modifier.at(Cell(1, 5, 1, 7)), C.ink, onFocusLabel, onClick, focus) {
+    val label = if (installed) "$profileName's pick: ${brand.name} — press OK to open" else "$profileName's pick: ${brand.name} isn't installed on this TV"
+    Panel(label, modifier, C.ink, onFocusLabel, onClick) {
         Image(art, null, Modifier.matchParentSize(), alignment = BiasAlignment(0f, -0.64f), contentScale = ContentScale.Crop)
         Box(
             Modifier.matchParentSize().drawBehind {
@@ -306,7 +372,7 @@ private fun WatchPanel(b: Brand, slot: Int, custom: Boolean, modifier: Modifier,
             Row(Modifier.fillMaxSize().padding(horizontal = PAD), verticalAlignment = Alignment.CenterVertically) {
                 T(b.name, 12.5.sp, Modifier.weight(1f), color = labelColor, weight = 700)
                 Spacer(Modifier.width(6.dp))
-                BrandMark(b.key, custom, Modifier.fillMaxHeight(0.62f).aspectRatio(160f / 90f, matchHeightConstraintsFirst = true))
+                BrandMark(b.key, custom, Modifier.fillMaxHeight(0.5f).aspectRatio(160f / 90f, matchHeightConstraintsFirst = true))
             }
         } else {
             Column(Modifier.fillMaxSize().padding(PAD)) {
@@ -410,12 +476,12 @@ private fun NetworkPanel(dns: DnsStatus, modifier: Modifier, onFocusLabel: (Stri
 }
 
 @Composable
-private fun ProfileChip(name: String, color: Color, active: Boolean, onFocusLabel: (String) -> Unit, onClick: () -> Unit) {
+private fun ProfileChip(name: String, color: Color, active: Boolean, onFocusLabel: (String) -> Unit, modifier: Modifier, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
     LaunchedEffect(focused) { if (focused) onFocusLabel("Switch to $name's profile") }
     Row(
-        Modifier
+        modifier
             .focusRing(focused, corner = 20.dp)
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .clip(CircleShape)

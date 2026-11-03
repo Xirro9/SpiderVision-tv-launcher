@@ -50,9 +50,36 @@ Known drift from the reference, to fix before Phase 2 sign-off:
 - The OEM "Art Time" overlay (`com.smartdevice.dailyshortcut`) can sit above any app after idle; it
   clears on the first remote press. Not caused by SpiderVision; noted for testing.
 
-## Phases 2–7
+## Phase 2 — navigation and real apps
 
-Pending. See the guide for exit gates.
+| Item | Status | Notes |
+| --- | --- | --- |
+| Deterministic D-pad map | done | `FocusMap.kt`: Left/Right use the panel's top row, Up/Down its left column; Up from the top row → active profile chip; Down from chips → cover; dead edges do nothing |
+| Real app catalog | done | 27 enabled leanback apps; 17 designed brands mapped (Peacock not installed) |
+| All apps board | done | every installed app; brands with custom marks (favourites first, wide), others with their own TV banner rendered at tile size, loaded only while the board is open |
+| Launch + return | done | Netflix, YouTube, TV Settings opened from the remote; focus returns to the launching tile (home and All apps) |
+| Back handling | done | Back closes All apps → focus on the All apps tile; Back on home exits to the system as normal |
+| Inputs | done | opens the TV's real input picker (`com.android.tv.action.VIEW_INPUTS`): Google TV, Live TV, AV, HDMI 1–3 |
+| Missing apps | done | missing brands drop out of Watch; a pinned missing app reads "Not installed" and launching reports why |
+| Footer recomposition | done | selected-item text lives in its own scope, so D-pad moves don't recompose the board |
+
+Remote D-pad walk verified on the TV (2026-11-02, via `adb input keyevent`, footer read back after each press):
+cover → Netflix → YouTube → Home base → Settings → Inputs → All apps → YouTube Music pin → Spotify pin →
+cover → Mahin chip → Aria chip → Mahin chip → cover → Netflix → Crunchyroll → Spotify pin →
+Crunchyroll pin → YouTube pin → YouTube Music pin. All as designed.
+
+Findings:
+
+- Netflix and TV Settings ignore Back at their own root screen. Users leave them with Home, which
+  goes to Google TV while SpiderVision is not the HOME app (Phase 6 decision).
+- Cold start is 5.6–7.4 s for the debug build; to be measured on a release build in Phase 5.
+- PSS ≈ 73 MB with the All apps banners loaded (debug).
+- Still to do by a person: an unscripted pass with the physical remote from the couch.
+
+## Phases 3–7
+
+Pending. See the guide for exit gates. Planned remote addition for Phase 3: the remote's **Menu**
+key on an app opens its options (favourite / move), replacing the prototype's "Edit apps" mode.
 
 ## Device facts that shape the build
 
