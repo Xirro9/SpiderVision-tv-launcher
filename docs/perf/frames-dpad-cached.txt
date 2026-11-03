@@ -1,0 +1,8 @@
+Total frames rendered: 72
+Janky frames: 8 (11.11%)
+50th percentile: 15ms
+90th percentile: 17ms
+99th percentile: 18ms
+Number Slow UI thread: 5
+Number Slow issue draw commands: 0
+Number Frame deadline missed: 8

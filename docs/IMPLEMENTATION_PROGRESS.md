@@ -124,7 +124,20 @@ Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
 
 New permission: `INTERNET` (only for NextDNS).
 
-## Phases 5–7
+## Phase 5 — profile and optimise on the TV
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Release build measured vs stock | done | 30–36 MB vs 103–107 MB; free RAM equal or better; cold 318–355 ms, hot 115–130 ms |
+| D-pad smoothness | done | panel render layers + cached panel art: median frame 57 → 15 ms, janky 100 % → 11 % |
+| Unit tests | done | 8 JVM tests: app ordering/favourites/moves and the D-pad map (reachability, no dead ends) |
+| Soak | partial | stopped at ~6 of 20 min by the owner; no crash, flat memory |
+| Playback, audio, casting, HDMI, Bluetooth, Wi-Fi after reboot | owner check | listed in `docs/PERFORMANCE.md` |
+| Roommate usability test | owner check | |
+
+Full numbers: `docs/PERFORMANCE.md`.
+
+## Phases 6–7
 
 Pending. See the guide for exit gates.
 

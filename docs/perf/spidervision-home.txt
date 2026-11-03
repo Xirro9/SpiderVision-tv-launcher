@@ -1,0 +1,60 @@
+## sv-1 00:21:31
+    topResumedActivity=ActivityRecord{f6c7455 u0 com.spidervision.tv/.MainActivity t10101}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   535,875K (  243,835K cached pss +   138,888K cached kernel +   153,152K free)
+ Used RAM: 1,664,288K (1,301,840K used pss +   362,448K kernel)
+     ZRAM:   145,768K physical used for   528,640K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 104150 TOTAL RSS: 202640 TOTAL SWAP PSS: 7323
+com.spidervision.tv:  TOTAL PSS: 29940 TOTAL RSS: 117904 TOTAL SWAP PSS: 290
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+1459 u0_a101      20   0 1.2G 103M  74M S 24.2   5.7   5:23.32 com.mediatek.tv.agent
+1475 shell        20   0  17M 3.2M 2.6M R 21.2   0.1   0:00.11 top -b -n 1 -d 1 -m 8
+1525 system       20   0 1.1G  71M  49M S  3.0   3.9   2:00.31 com.smartdevice.global.service
+1047 system       18  -2 2.4G 313M 243M S  3.0  17.4   3:20.77 system_server
+ 556 system       -3 -10 100M  14M 9.1M S  3.0   0.7   2:03.38 hwcomposer.merak
+ 550 audioserver  20   0  99M  10M 7.5M S  3.0   0.5   0:06.98 vendor.mediatek.hardware.audio.service
+ 545 media        20   0  44M 3.8M 3.6M S  3.0   0.2   0:06.91 vendor.mediatek.hardware.tv.aidltuner-service
+1356 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/3:2-mm_percpu_wq]
+pswpin 93331
+pswpout 241745
+pgmajfault 236781
+## sv-2 00:22:11
+    topResumedActivity=ActivityRecord{f6c7455 u0 com.spidervision.tv/.MainActivity t10101}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   554,311K (  244,143K cached pss +   148,040K cached kernel +   162,128K free)
+ Used RAM: 1,648,177K (1,285,677K used pss +   362,500K kernel)
+     ZRAM:   147,652K physical used for   540,160K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 79436 TOTAL RSS: 181148 TOTAL SWAP PSS: 7319
+com.spidervision.tv:  TOTAL PSS: 33008 TOTAL RSS: 124668 TOTAL SWAP PSS: 157
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+1575 shell        20   0  17M 3.3M 2.6M R 27.2   0.1   0:00.09 top -b -n 1 -d 1 -m 8
+1459 u0_a101      20   0 1.2G 102M  74M S  6.0   5.6   5:26.28 com.mediatek.tv.agent
+2239 u0_a141      20   0 1.9G 120M  64M S  3.0   6.6   1:00.10 com.spotify.tv.android
+1525 system       20   0 1.1G  71M  49M S  3.0   3.9   2:01.38 com.smartdevice.global.service
+1047 system       18  -2 2.4G 316M 243M S  3.0  17.5   3:28.96 system_server
+ 550 audioserver  20   0  99M  10M 7.5M S  3.0   0.5   0:07.01 vendor.mediatek.hardware.audio.service
+ 497 system       20   0  25M 2.7M 2.5M S  3.0   0.1   0:08.94 android.hardware.tv.hdmi.earc-service.mediatek
+ 478 root         RT   0    0    0    0 D  3.0   0.0   0:29.40 [pre_signal_task]
+pswpin 93480
+pswpout 245566
+pgmajfault 236932
+## sv-3 00:22:52
+    topResumedActivity=ActivityRecord{f6c7455 u0 com.spidervision.tv/.MainActivity t10101}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   551,208K (  244,372K cached pss +   148,764K cached kernel +   158,072K free)
+ Used RAM: 1,649,150K (1,286,722K used pss +   362,428K kernel)
+     ZRAM:   147,100K physical used for   534,272K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 77861 TOTAL RSS: 179576 TOTAL SWAP PSS: 7319
+com.spidervision.tv:  TOTAL PSS: 33769 TOTAL RSS: 125528 TOTAL SWAP PSS: 157
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+1801 shell        20   0  17M 3.3M 2.6M R 24.2   0.1   0:00.10 top -b -n 1 -d 1 -m 8
+1459 u0_a101      20   0 1.2G 101M  74M S 12.1   5.6   5:29.19 com.mediatek.tv.agent
+1525 system       20   0 1.1G  72M  49M S  3.0   4.0   2:02.46 com.smartdevice.global.service
+1047 system       18  -2 2.4G 319M 243M S  3.0  17.7   3:37.05 system_server
+ 630 vendor_cpu_audio 20 0 64M 1.7M 1.6M S 3.0   0.0   0:32.88 cpu_audio
+ 561 system       20   0  34M 4.4M 3.9M S  3.0   0.2   0:21.14 vendor.mediatek.hardware.utility-V1-service
+ 556 system       -3 -10 100M  14M 9.1M S  3.0   0.7   2:04.62 hwcomposer.merak
+ 494 system       20   0  26M 3.0M 2.7M S  3.0   0.1   0:02.73 android.hardware.tv.hdmi.cec-service.mediatek
+pswpin 93665
+pswpout 245566
+pgmajfault 237120

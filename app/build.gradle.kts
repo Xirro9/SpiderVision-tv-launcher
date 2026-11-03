@@ -12,8 +12,8 @@ android {
         applicationId = "com.spidervision.tv"
         minSdk = 28
         targetSdk = 34 // the Philips runs Android 14
-        versionCode = 4
-        versionName = "0.4.0-phase4"
+        versionCode = 5
+        versionName = "0.5.0-phase5"
     }
 
     buildTypes {
@@ -21,6 +21,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Phase 5 measurements only: signed with the local debug key so it installs over the
+            // test build and keeps saved settings. Phase 7 switches to a private release key.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -49,4 +52,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    testImplementation("junit:junit:4.13.2")
 }

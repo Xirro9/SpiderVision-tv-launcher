@@ -1,0 +1,66 @@
+## stock-1 00:16:19
+      topResumedActivity=ActivityRecord{f5155f2 u0 com.google.android.apps.tv.launcherx/.home.HomeActivity t10086}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   541,443K (  244,123K cached pss +   177,064K cached kernel +   120,256K free)
+ Used RAM: 1,687,095K (1,292,811K used pss +   394,284K kernel)
+     ZRAM:   137,912K physical used for   515,840K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 103478 TOTAL RSS: 200644 TOTAL SWAP PSS: 7984
+com.spidervision.tv: 
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+ 812 shell        20   0  17M 3.2M 2.6M R 23.5   0.1   0:00.10 top -b -n 1 -d 1 -m 8
+ 505 mediacodec   20   0 107M  12M  10M S  2.9   0.6   0:38.74 android.hardware.media.c2@1.1-mediatek
+ 384 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/0:2-events]
+ 366 root          0 -20    0    0    0 I  0.0   0.0   0:00.00 [kworker/u9:5-blk_crypto_wq]
+ 335 root          0 -20    0    0    0 I  0.0   0.0   0:00.04 [kworker/u9:3-blk_crypto_wq]
+3899 root          0 -20    0    0    0 I  0.0   0.0   0:00.03 [kworker/3:2H-kblockd]
+3886 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/3:0-mm_percpu_wq]
+3883 root          0 -20    0    0    0 I  0.0   0.0   0:00.07 [kworker/2:1H-kblockd]
+workingset_refault_anon 92063
+workingset_refault_file 342469
+pswpin 92063
+pswpout 232564
+pgmajfault 234557
+## stock-2 00:16:59
+      topResumedActivity=ActivityRecord{f5155f2 u0 com.google.android.apps.tv.launcherx/.home.HomeActivity t10086}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   531,739K (  245,163K cached pss +   184,624K cached kernel +   101,952K free)
+ Used RAM: 1,690,403K (1,296,131K used pss +   394,272K kernel)
+     ZRAM:   147,724K physical used for   536,576K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 107274 TOTAL RSS: 205396 TOTAL SWAP PSS: 7261
+com.spidervision.tv: 
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+ 933 shell        20   0  17M 3.3M 2.6M R 24.2   0.1   0:00.10 top -b -n 1 -d 1 -m 8
+1459 u0_a101      20   0 1.2G 102M  74M S 12.1   5.6   5:03.49 com.mediatek.tv.agent
+1047 system       18  -2 2.5G 329M 249M S  6.0  18.2   3:00.22 system_server
+1525 system       20   0 1.1G  71M  49M S  3.0   3.9   1:53.03 com.smartdevice.global.service
+ 556 system       -3 -10 100M  14M 9.1M S  3.0   0.7   1:58.93 hwcomposer.merak
+  12 root         20   0    0    0    0 S  3.0   0.0   0:00.86 [ksoftirqd/0]
+ 384 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/0:2-events]
+ 366 root          0 -20    0    0    0 I  0.0   0.0   0:00.00 [kworker/u9:5-blk_crypto_wq]
+workingset_refault_anon 92437
+workingset_refault_file 342592
+pswpin 92437
+pswpout 239659
+pgmajfault 235046
+## stock-3 00:17:39
+      topResumedActivity=ActivityRecord{f5155f2 u0 com.google.android.apps.tv.launcherx/.home.HomeActivity t10086}
+Total RAM: 1,840,776K (status normal)
+ Free RAM:   529,279K (  245,423K cached pss +   196,588K cached kernel +    87,268K free)
+ Used RAM: 1,688,323K (1,294,099K used pss +   394,224K kernel)
+     ZRAM:   147,964K physical used for   539,904K in swap (1,023,996K total swap)
+com.google.android.apps.tv.launcherx:  TOTAL PSS: 102610 TOTAL RSS: 200732 TOTAL SWAP PSS: 7261
+com.spidervision.tv: 
+ PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+1006 shell        20   0  17M 3.3M 2.6M R 24.2   0.1   0:00.09 top -b -n 1 -d 1 -m 8
+1459 u0_a101      20   0 1.2G  99M  74M S  6.0   5.5   5:06.43 com.mediatek.tv.agent
+3161 u0_a153      20   0 1.2G  64M  46M S  3.0   3.5   0:03.33 com.smartdevice.ipcontrol
+ 556 system       -3 -10 100M  14M 9.1M S  3.0   0.7   1:59.72 hwcomposer.merak
+ 384 root         20   0    0    0    0 I  0.0   0.0   0:00.00 [kworker/0:2-events]
+ 366 root          0 -20    0    0    0 I  0.0   0.0   0:00.00 [kworker/u9:5-blk_crypto_wq]
+ 335 root          0 -20    0    0    0 I  0.0   0.0   0:00.04 [kworker/u9:3-blk_crypto_wq]
+3899 root          0 -20    0    0    0 I  0.0   0.0   0:00.03 [kworker/3:2H-kblockd]
+workingset_refault_anon 92538
+workingset_refault_file 342764
+pswpin 92538
+pswpout 241560
+pgmajfault 235157

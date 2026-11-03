@@ -1,0 +1,10 @@
+ Native Heap 13741 13720 0 24 14556 27840 13125 5106
+ Dalvik Heap 5574 2872 108 22 8876 8565 4283 4282
+ .so mmap 4557 208 1064 5 39504 
+ .apk mmap 1814 0 1736 0 3140 
+ .ttf mmap 901 0 816 0 1124 
+ .dex mmap 104 4 88 0 820 
+ Other mmap 251 8 120 0 912 
+ Native Heap: 13720 14556
+ Graphics: 0 0
+ Private Other: 1568

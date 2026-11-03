@@ -27,6 +27,8 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
@@ -73,7 +75,7 @@ fun AllAppsBoard(
     }
 
     Box(Modifier.fillMaxSize().background(C.bg)) {
-        Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).halftone(C.halftonePage, 5.5.dp, 1.2.dp))
+        Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.halftone(C.halftonePage, 5.5.dp, 1.2.dp))
         Column(Modifier.fillMaxSize().padding(start = 28.8.dp, end = 28.8.dp, top = 16.dp, bottom = 10.8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WebGlyph(24.dp)

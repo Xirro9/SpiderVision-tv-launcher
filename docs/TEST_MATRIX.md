@@ -36,8 +36,8 @@ Legend: ✅ pass · ❌ fail · ⏳ not yet run · — not applicable yet
 | Stock launcher, DNS and disabled-package set untouched | ✅ | 2026-11-02 | HOME = launcherx, 19 disabled, unchanged |
 | No key/token/secret in source, APK or logs | ✅ | 2026-11-02 | key only via ADB, encrypted on TV; test key absent from logcat and from the vault file in plain text |
 | No background service or unneeded permission | ✅ | 2026-11-02 | no services; only INTERNET (NextDNS) |
-| 5+ min idle PSS / CPU / swap recorded vs stock | ⏳ | | |
+| 5+ min idle PSS / CPU / swap recorded vs stock | ✅ | 2026-11-03 | release 30–36 MB vs launcherx 103–107 MB; free RAM equal or better (`docs/PERFORMANCE.md`) |
 | Reboot: remote, audio, HDMI, casting, playback OK | ⏳ | 2026-11-02 | rebooted once: ADB, HOME, DNS, disabled set OK; remote in use after boot; audio/HDMI/casting/playback not yet checked |
-| 20-minute navigation soak: no crash/ANR/growth | ⏳ | | |
+| 20-minute navigation soak: no crash/ANR/growth | ⏳ partial | 2026-11-03 | stopped at ~6 min by the owner: 448 presses, no crash, 39–42 MB flat |
 | Force-stop Orrery → stock home still reachable | ⏳ | | |
 | HOME replacement only with approval + proven rollback | — | | Phase 6 |

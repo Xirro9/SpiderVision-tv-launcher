@@ -43,6 +43,8 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -275,7 +277,7 @@ fun HomeScreen() {
             }
 
             Box(Modifier.fillMaxSize().background(C.bg)) {
-                Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).halftone(C.halftonePage, 5.5.dp, 1.2.dp))
+                Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.halftone(C.halftonePage, 5.5.dp, 1.2.dp))
                 Column(Modifier.fillMaxSize().padding(start = 28.8.dp, end = 28.8.dp, top = 16.dp, bottom = 10.8.dp)) {
                     // ---------- Header ----------
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -489,7 +491,7 @@ fun Footer(ui: UiMessages) {
     Spacer(Modifier.height(10.8.dp))
     Box(Modifier.fillMaxWidth().height(1.dp).background(C.rule))
     Spacer(Modifier.height(8.6.dp))
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.graphicsLayer(), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
             val s = ui.status
             if (s != null) SpeechBubble(s) else T(ui.focused, 8.6.sp, weight = 600)
@@ -517,6 +519,7 @@ fun Panel(
     LaunchedEffect(focused, label) { if (focused) onFocusLabel(label) }
     Box(
         modifier
+            .graphicsLayer() // own layer: the focus ring redraws only this panel
             .focusRing(focused)
             .onPreviewKeyEvent { e ->
                 if (onMenu != null && e.key == Key.Menu) {
@@ -525,6 +528,9 @@ fun Panel(
                 } else false
             }
             .combinedClickable(interactionSource = source, indication = null, onLongClick = onMenu, onClick = onClick)
+            // Panel artwork is cached as a GPU texture and only re-rendered when its content
+            // changes; the focus ring above is drawn outside it, so a D-pad move doesn't redraw art.
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .clip(PANEL_SHAPE)
             .background(bg)
             .border(1.5.dp, C.cream, PANEL_SHAPE),
@@ -635,7 +641,7 @@ private fun PinPanel(
     val sub = when { !isInstalled -> "Not installed"; else -> BRAND_BY_PKG[pkg]?.tag ?: "App" }
     Panel(label, modifier, C.surface, onFocusLabel, onMenu, onClick) {
         if (index == 0) {
-            Box(Modifier.align(Alignment.BottomEnd).fillMaxHeight(0.85f).fillMaxWidth(0.65f).halftone(C.halftonePanel, 4.5.dp, 1.dp))
+            Box(Modifier.align(Alignment.BottomEnd).fillMaxHeight(0.85f).fillMaxWidth(0.65f).graphicsLayer().halftone(C.halftonePanel, 4.5.dp, 1.dp))
             Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
                 Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     AppChip(pkg, installed, custom, art, 26.dp)
@@ -827,6 +833,7 @@ private fun ProfileChip(name: String, color: Color, active: Boolean, onFocusLabe
     LaunchedEffect(focused) { if (focused) onFocusLabel("Switch to $name's profile") }
     Row(
         modifier
+            .graphicsLayer()
             .focusRing(focused, corner = 20.dp)
             .combinedClickable(interactionSource = source, indication = null, onClick = onClick)
             .clip(CircleShape)

@@ -1,0 +1,6 @@
+start 00:31:27 pid=1842
+00:31:28 presses=0 pss_kb=39441 pid=1842 top=u0 com.spidervision.tv/.MainActivity
+00:33:30 presses=155 pss_kb=41243 pid=1842 top=u0 com.spidervision.tv/.MainActivity
+00:35:31 presses=306 pss_kb=41613 pid=1842 top=u0 com.spidervision.tv/.MainActivity
+00:37:33 presses=448 pss_kb=40156 pid=1842 top=u0 com.spidervision.tv/.MainActivity
+stopped early at the owner's request (~6 min of 20)

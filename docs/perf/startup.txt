@@ -1,0 +1,12 @@
+## cold starts (force-stop, am start -W)
+TotalTime: 318
+TotalTime: 335
+TotalTime: 355
+TotalTime: 318
+TotalTime: 329
+## warm starts (Home, then am start -W)
+LaunchState: HOT TotalTime: 130 
+LaunchState: HOT TotalTime: 119 
+LaunchState: HOT TotalTime: 127 
+LaunchState: HOT TotalTime: 115 
+LaunchState: HOT TotalTime: 115 

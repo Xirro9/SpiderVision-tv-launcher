@@ -1,0 +1,11 @@
+Total frames rendered: 72
+Janky frames: 72 (100.00%)
+Janky frames (legacy): 72 (100.00%)
+50th percentile: 57ms
+90th percentile: 61ms
+95th percentile: 61ms
+99th percentile: 65ms
+Number Slow UI thread: 71
+Number Slow bitmap uploads: 0
+Number Frame deadline missed: 72
+Number Frame deadline missed (legacy): 72

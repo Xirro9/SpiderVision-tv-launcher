@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -88,6 +89,7 @@ fun SheetButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = 
         text, 10.sp, weight = 700,
         color = if (!enabled) C.disabled else if (accent) C.text else C.text,
         modifier = modifier
+            .graphicsLayer()
             .focusRing(focused, corner = 4.dp)
             .clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
             .clip(RoundedCornerShape(4.dp))
@@ -105,6 +107,7 @@ fun SwitchRow(label: String, hint: String, on: Boolean, modifier: Modifier = Mod
     Row(
         modifier
             .fillMaxWidth()
+            .graphicsLayer()
             .focusRing(focused, corner = 4.dp)
             .clickable(interactionSource = source, indication = null, onClick = onToggle)
             .clip(RoundedCornerShape(4.dp))
