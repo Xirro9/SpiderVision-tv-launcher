@@ -2,6 +2,22 @@ package com.spidervision.tv.ui
 
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -121,6 +137,7 @@ private val WATCH_CELLS = listOf(
 )
 private val SHORT_SLOTS = setOf(1, 3, 4, 5)
 private val FAV_CELLS = listOf(Cell(5, 7, 4, 6), Cell(7, 10, 4, 5), Cell(7, 10, 5, 6), Cell(5, 10, 6, 7))
+private val PROFILE_KEYS = listOf(Key.One, Key.Two, Key.Three, Key.Four)
 private val PANEL_IDS = listOf("cover", "net", "settings", "inputs", "allapps") + (0..5).map { "w$it" } + (0..3).map { "f$it" }
 
 @Composable
@@ -235,7 +252,7 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
         }
     }
 
-    BackHandler(enabled = showAllApps) { showAllApps = false }
+    BackHandler(enabled = showAllApps) { SoundFx.play(SoundFx.Cue.BACK); showAllApps = false }
     // As the TV's Home app there is nothing "behind" the board: Back there does nothing.
     BackHandler(enabled = !showAllApps && isHomeApp()) { }
     // Home key while already showing: close All apps and go back to the cover.
@@ -253,6 +270,7 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
     val active = prefs.active
     val pp = prefs.current
     val profile = DEFAULT_PROFILES.first { it.id == active }
+    SoundFx.enabled = pp.sounds
     val ordered = remember(installed, pp) { orderedApps(installed, pp) }
     val watchApps = ordered.take(6)
     // The big Favorites panel shows the profile's most-opened app (not one already pinned beside it).
@@ -263,12 +281,24 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
     }
 
     val launch = { pkg: String ->
+        SoundFx.play(SoundFx.Cue.THWIP)
         val problem = AppCatalog.launch(context, pkg, appName(pkg, installed))
+        if (problem != null) SoundFx.play(SoundFx.Cue.BUZZ)
         ui.status = problem
         if (problem == null) scope.launch { store.recordLaunch(active, pkg) }
     }
     val onFocusLabel = { s: String -> ui.focused = s }
     val openOptions = { pkg: String -> optionsFor = pkg }
+    val switchProfile = { id: String ->
+        if (id != active) {
+            SoundFx.play(SoundFx.Cue.SENSE)
+            scope.launch { store.setActive(id) }
+            ui.status = "Spider-sense: switched to ${DEFAULT_PROFILES.first { it.id == id }.name}"
+        }
+    }
+    // The masthead web spins once whenever the profile changes.
+    val spin = remember { Animatable(0f) }
+    LaunchedEffect(active) { spin.snapTo(0f); spin.animateTo(360f, tween(560, easing = FastOutSlowInEasing)) }
 
     CompositionLocalProvider(LocalTextScale provides if (pp.largeText) 1.15f else 1f) {
         if (showAllApps) {
@@ -299,12 +329,32 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                     .onFocusChanged { if (it.isFocused) lastFocus[0] = id }
             }
 
-            Box(Modifier.fillMaxSize().background(C.bg)) {
+            val enter = remember { Animatable(0f) }
+            LaunchedEffect(Unit) { enter.animateTo(1f, tween(220, easing = FastOutSlowInEasing)) }
+            Box(
+                Modifier.fillMaxSize().background(C.bg).onPreviewKeyEvent { e ->
+                    // Remote number keys 1-4 jump straight to a profile.
+                    val i = PROFILE_KEYS.indexOf(e.key)
+                    if (i >= 0 && i < DEFAULT_PROFILES.size) {
+                        if (e.type == KeyEventType.KeyUp) switchProfile(DEFAULT_PROFILES[i].id)
+                        true
+                    } else false
+                },
+            ) {
                 Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.halftone(C.halftonePage, 5.5.dp, 1.2.dp))
-                Column(Modifier.fillMaxSize().padding(start = 28.8.dp, end = 28.8.dp, top = 16.dp, bottom = 10.8.dp)) {
+                Column(
+                    Modifier.fillMaxSize()
+                        .graphicsLayer {
+                            val e = enter.value
+                            translationY = (1f - e) * 18.dp.toPx()
+                            scaleX = 0.985f + 0.015f * e
+                            scaleY = 0.985f + 0.015f * e
+                        }
+                        .padding(start = 28.8.dp, end = 28.8.dp, top = 16.dp, bottom = 10.8.dp),
+                ) {
                     // ---------- Header ----------
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        WebGlyph(28.8.dp)
+                        WebGlyph(28.8.dp, Modifier.graphicsLayer { rotationZ = spin.value })
                         Spacer(Modifier.width(6.dp))
                         Column {
                             T("SpiderVision", 27.8.sp, color = C.red, family = Bangers, weight = 400, tracking = 0.04.em, lineHeight = 24.sp)
@@ -325,10 +375,7 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                                         if (i == 0) left = FocusRequester.Cancel
                                         if (i == DEFAULT_PROFILES.lastIndex) right = FocusRequester.Cancel
                                     }
-                                ProfileChip(p.name, p.color, p.id == active, onFocusLabel, chipNav) {
-                                    scope.launch { store.setActive(p.id) }
-                                    ui.status = "Switched to ${p.name}"
-                                }
+                                ProfileChip(p.name, p.color, p.id == active, onFocusLabel, chipNav) { switchProfile(p.id) }
                             }
                         }
                         Spacer(Modifier.weight(1f))
@@ -377,7 +424,7 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                                 }
                             }
                         }
-                        Panel("All apps — press OK to see every app on this TV", Modifier.nav("allapps"), C.surface, onFocusLabel, onClick = { showAllApps = true }) {
+                        Panel("All apps — press OK to see every app on this TV", Modifier.nav("allapps"), C.surface, onFocusLabel, onClick = { SoundFx.play(SoundFx.Cue.THWIP); showAllApps = true }) {
                             Row(Modifier.fillMaxSize().padding(horizontal = PAD, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 StrokeIcon(Icons.grid, C.silver, 17.3.dp)
                                 Spacer(Modifier.width(8.dp))
@@ -475,9 +522,12 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                     SwitchRow("Larger text", "For reading from farther away.", pp.largeText) {
                         scope.launch { store.update(active) { it.copy(largeText = !it.largeText) } }
                     }
+                    SwitchRow("Sounds", "Web-tick, thwip and spider-sense effects.", pp.sounds) {
+                        scope.launch { store.update(active) { it.copy(sounds = !it.sounds) } }
+                    }
                     Spacer(Modifier.height(4.dp))
                     SheetLabel("Tip")
-                    T("Press Menu on the remote (or hold OK) on any app to favorite, move or pin it.", 8.2.sp, color = C.silver, maxLines = 3, lineHeight = 11.sp)
+                    T("Press Menu on the remote (or hold OK) on any app to favorite, move or pin it. Number keys 1–4 switch profiles.", 8.2.sp, color = C.silver, maxLines = 3, lineHeight = 11.sp)
                     Spacer(Modifier.height(4.dp))
                     SheetButton("Open TV settings", Modifier.fillMaxWidth()) {
                         ui.status = AppCatalog.launch(context, "com.android.tv.settings", "TV settings")
@@ -518,6 +568,7 @@ fun Footer(ui: UiMessages) {
             Key("◀ ▲ ▼ ▶"); T("Move", 8.6.sp, color = C.silver)
             Key("OK"); T("Open", 8.6.sp, color = C.silver)
             Key("Menu"); T("Options", 8.6.sp, color = C.silver)
+            Key("1–4"); T("Profiles", 8.6.sp, color = C.silver)
             Key("Back"); T("Close", 8.6.sp, color = C.silver)
         }
     }
@@ -534,11 +585,20 @@ fun Panel(
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
+    // Snappy lift: a quick scale-up with the ring fading in. Only this panel's outer layer moves;
+    // its cached artwork is just transformed, not redrawn.
+    val lift by animateFloatAsState(if (focused) 1f else 0f, tween(if (focused) 150 else 110, easing = FastOutSlowInEasing), label = "lift")
     LaunchedEffect(focused, label) { if (focused) onFocusLabel(label) }
+    LaunchedEffect(focused) { if (focused) SoundFx.play(SoundFx.Cue.TICK) }
     Box(
         modifier
-            .graphicsLayer() // own layer: the focus ring redraws only this panel
-            .focusRing(focused)
+            .zIndex(if (focused) 1f else 0f)
+            .graphicsLayer { // own layer: the focus ring redraws only this panel
+                val s = 1f + 0.03f * lift
+                scaleX = s
+                scaleY = s
+            }
+            .focusRing(focused, alpha = lift)
             .onPreviewKeyEvent { e ->
                 if (onMenu != null && e.key == Key.Menu) {
                     if (e.type == KeyEventType.KeyUp) onMenu()
@@ -605,19 +665,33 @@ private fun CoverPanel(
             },
         )
         Caption("Tonight's issue", 7.7.sp, Modifier.align(Alignment.TopStart).padding(7.7.dp))
-        Burst("Play!", 53.8.dp, 9.6.sp, Modifier.align(Alignment.TopEnd).padding(4.dp))
+        val burstPop = remember { Animatable(1f) }
+        LaunchedEffect(index) { burstPop.snapTo(1.18f); burstPop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 500f)) }
+        Burst("Play!", 53.8.dp, 9.6.sp, Modifier.align(Alignment.TopEnd).padding(4.dp).graphicsLayer { scaleX = burstPop.value; scaleY = burstPop.value; rotationZ = (burstPop.value - 1f) * 40f })
         Column(Modifier.align(Alignment.BottomStart).padding(14.4.dp)) {
             Caption("Now showing", 7.2.sp)
             Spacer(Modifier.height(4.dp))
-            T(name, 34.6.sp, family = Bangers, weight = 400, tracking = 0.04.em, lineHeight = 32.sp)
+            // Comic-panel cut: the new title slides up in as the old one slides away.
+            AnimatedContent(
+                targetState = name,
+                modifier = Modifier.clipToBounds(),
+                transitionSpec = {
+                    (slideInVertically(tween(260, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(200))) togetherWith
+                        (slideOutVertically(tween(180)) { -it / 2 } + fadeOut(tween(140)))
+                },
+                label = "cover-title",
+            ) { n -> T(n, 34.6.sp, family = Bangers, weight = 400, tracking = 0.04.em, lineHeight = 32.sp) }
             Spacer(Modifier.height(4.dp))
-            T(if (pkg != null) "Press OK to open $name" else "Install one from the Play Store", 10.1.sp, color = C.silver, weight = 600)
+            Crossfade(name, animationSpec = tween(200), label = "cover-meta") { n ->
+                T(if (pkg != null) "Press OK to open $n" else "Install one from the Play Store", 10.1.sp, color = C.silver, weight = 600)
+            }
             if (rotation.size > 1) {
                 Spacer(Modifier.height(7.dp))
                 // Which app of the rotation is showing.
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     rotation.indices.forEach { i ->
-                        Box(Modifier.size(width = if (i == index) 14.dp else 5.dp, height = 5.dp).clip(CircleShape).background(if (i == index) C.red else C.rule))
+                        val w by animateDpAsState(if (i == index) 14.dp else 5.dp, tween(220, easing = FastOutSlowInEasing), label = "dot")
+                        Box(Modifier.size(width = w, height = 5.dp).clip(CircleShape).background(if (i == index) C.red else C.rule))
                     }
                 }
             }
@@ -883,11 +957,12 @@ private fun NetworkSheet(net: NetView, onRefresh: () -> Unit, onDismiss: () -> U
 private fun ProfileChip(name: String, color: Color, active: Boolean, onFocusLabel: (String) -> Unit, modifier: Modifier, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
-    LaunchedEffect(focused) { if (focused) onFocusLabel("Switch to $name's profile") }
+    val lift by animateFloatAsState(if (focused) 1f else 0f, tween(140, easing = FastOutSlowInEasing), label = "chip")
+    LaunchedEffect(focused) { if (focused) { onFocusLabel("Switch to $name's profile"); SoundFx.play(SoundFx.Cue.TICK) } }
     Row(
         modifier
-            .graphicsLayer()
-            .focusRing(focused, corner = 20.dp)
+            .graphicsLayer { val s = 1f + 0.06f * lift; scaleX = s; scaleY = s }
+            .focusRing(focused, corner = 20.dp, alpha = lift)
             .combinedClickable(interactionSource = source, indication = null, onClick = onClick)
             .clip(CircleShape)
             .background(if (active) C.text else C.surface)
@@ -904,7 +979,16 @@ private fun ProfileChip(name: String, color: Color, active: Boolean, onFocusLabe
 
 @Composable
 private fun SpeechBubble(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val pop = remember(text) { Animatable(0.55f) }
+    LaunchedEffect(text) { pop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f)) }
+    Row(
+        Modifier.graphicsLayer {
+            scaleX = pop.value
+            scaleY = pop.value
+            transformOrigin = TransformOrigin(0f, 0.5f)
+        },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Canvas(Modifier.size(width = 7.dp, height = 7.dp)) {
             val p = Path().apply { moveTo(size.width, 0f); lineTo(0f, size.height / 2); lineTo(size.width, size.height) }
             drawPath(p, C.cream)

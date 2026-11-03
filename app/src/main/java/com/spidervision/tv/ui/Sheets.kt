@@ -1,6 +1,11 @@
 package com.spidervision.tv.ui
 
 import android.view.Gravity
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
 import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,7 +54,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 
 @Composable
 fun SideSheet(title: String, subtitle: String, onDismiss: () -> Unit, header: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.(FocusRequester) -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    Dialog(onDismissRequest = { SoundFx.play(SoundFx.Cue.BACK); onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val view = LocalView.current
         SideEffect {
             (view.parent as? DialogWindowProvider)?.window?.apply {
@@ -60,9 +65,18 @@ fun SideSheet(title: String, subtitle: String, onDismiss: () -> Unit, header: (@
             }
         }
         val first = remember { FocusRequester() }
-        LaunchedEffect(Unit) { withFrameNanos { }; runCatching { first.requestFocus() } }
+        val slide = remember { Animatable(1f) }
+        LaunchedEffect(Unit) {
+            SoundFx.play(SoundFx.Cue.THWIP)
+            SoundFx.hush(250)
+            withFrameNanos { }
+            runCatching { first.requestFocus() }
+            slide.animateTo(0f, tween(200, easing = FastOutSlowInEasing))
+        }
         Column(
-            Modifier.width(300.dp).fillMaxHeight().background(C.bg).border(1.5.dp, C.cream)
+            Modifier.width(300.dp).fillMaxHeight()
+                .graphicsLayer { translationX = slide.value * 300.dp.toPx() }
+                .background(C.bg).border(1.5.dp, C.cream)
                 .padding(horizontal = 16.dp, vertical = 18.dp),
         ) {
             Caption(title, 7.2.sp)
@@ -85,6 +99,7 @@ fun SideSheet(title: String, subtitle: String, onDismiss: () -> Unit, header: (@
 fun SheetButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, accent: Boolean = false, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
+    LaunchedEffect(focused) { if (focused) SoundFx.play(SoundFx.Cue.TICK) }
     T(
         text, 10.sp, weight = 700,
         color = if (!enabled) C.disabled else if (accent) C.text else C.text,
@@ -104,6 +119,7 @@ fun SheetButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = 
 fun SwitchRow(label: String, hint: String, on: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
+    LaunchedEffect(focused) { if (focused) SoundFx.play(SoundFx.Cue.TICK) }
     Row(
         modifier
             .fillMaxWidth()
@@ -121,10 +137,11 @@ fun SwitchRow(label: String, hint: String, on: Boolean, modifier: Modifier = Mod
             T(hint, 7.7.sp, color = C.silver, maxLines = 2)
         }
         Spacer(Modifier.width(8.dp))
+        val knob by animateDpAsState(if (on) 14.dp else 0.dp, tween(160, easing = FastOutSlowInEasing), label = "knob")
         Box(
             Modifier.size(width = 30.dp, height = 16.dp).clip(CircleShape).background(if (on) C.red else C.rule).padding(2.dp),
-            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-        ) { Box(Modifier.size(12.dp).clip(CircleShape).background(C.text)) }
+            contentAlignment = Alignment.CenterStart,
+        ) { Box(Modifier.offset(x = knob).size(12.dp).clip(CircleShape).background(C.text)) }
         Spacer(Modifier.width(6.dp))
         T(if (on) "On" else "Off", 8.6.sp, color = C.silver, weight = 600, tracking = 0.02.em, modifier = Modifier.width(18.dp))
     }

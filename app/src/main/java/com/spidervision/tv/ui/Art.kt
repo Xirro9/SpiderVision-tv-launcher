@@ -165,13 +165,13 @@ fun Caption(text: String, fontSize: TextUnit, modifier: Modifier = Modifier) {
  * The single yellow focus outline, drawn outside the control's bounds. Must be applied
  * before any clip so it isn't cut off.
  */
-fun Modifier.focusRing(focused: Boolean, corner: Dp = 2.dp, width: Dp = 3.dp, offset: Dp = 2.dp) = drawWithContent {
+fun Modifier.focusRing(focused: Boolean, corner: Dp = 2.dp, width: Dp = 3.dp, offset: Dp = 2.dp, alpha: Float = if (focused) 1f else 0f) = drawWithContent {
     drawContent()
-    if (focused) {
+    if (alpha > 0.01f) {
         val w = width.toPx()
         val o = offset.toPx() + w / 2
         drawRoundRect(
-            C.focus,
+            C.focus.copy(alpha = alpha),
             topLeft = Offset(-o, -o),
             size = Size(size.width + 2 * o, size.height + 2 * o),
             cornerRadius = CornerRadius(corner.toPx() + o),

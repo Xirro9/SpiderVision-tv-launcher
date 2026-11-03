@@ -12,8 +12,8 @@ android {
         applicationId = "com.spidervision.tv"
         minSdk = 28
         targetSdk = 34 // the Philips runs Android 14
-        versionCode = 7
-        versionName = "0.6.1"
+        versionCode = 8
+        versionName = "0.7.0-polish"
     }
 
     buildTypes {

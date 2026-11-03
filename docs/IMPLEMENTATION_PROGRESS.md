@@ -171,3 +171,20 @@ Pending.
 | YouTube Music works | opens; the YouTube Music TV app itself hands off to the YouTube app (Google's behaviour, same from Google TV) | ✅ |
 | Inputs / HDMI | Inputs tile → system picker → HDMI 1 switched (PassthroughPlayerActivity, "No signal": device in standby) → Home back to SpiderVision | ✅ |
 | TV function checks | speaker active, not muted; Chromecast built-in + AirCast running; Bluetooth on with the BLE remote; Wi-Fi on; HDMI 1–3 report a connected device in standby | ✅ (read-only) |
+
+## Polish pass (2026-11-03, owner request: "sleek, snappy animations, Spider-Man sounds, low RAM")
+
+| Added | Detail | Cost |
+| --- | --- | --- |
+| Focus lift | selected panel scales up 3 % in 150 ms with the yellow ring fading in; drawn above neighbours | transforms the cached panel texture only |
+| Cover cut | rotating title slides up (comic-panel cut), "Play!" burst pops, position dots glide | ~250 ms every 5 s |
+| Sheets | side sheets slide in from the right; switch knobs glide | 200 ms |
+| Board entrance | board and All apps slide up 18–24 px as they open / return | 220 ms |
+| Speech bubble | status messages pop in with a small bounce | — |
+| Spider-sense | profile switch spins the masthead web and plays a two-note tingle | 560 ms |
+| UI sounds | original synthesized web-tick (focus), thwip (open), zip (back), spider-sense (profile), buzz (can't open); `tools/make_sounds.py`; 37 KB total; quiet; rate-limited; per-profile **Sounds** switch | SoundPool, 3 streams |
+| Number keys | remote 1–4 switch to Mahin / Tabitha / John / Raph | — |
+
+Measured on the TV (release): 40 D-pad moves → 455 frames, median 19 ms, 90th 34 ms, janky 7.7 %
+(slowest frames are the cover title slide); PSS 46 MB (was 36 MB; still < 60 MB target and about
+half of Google TV's home). Number keys verified. Sounds can't be verified audibly from the PC.

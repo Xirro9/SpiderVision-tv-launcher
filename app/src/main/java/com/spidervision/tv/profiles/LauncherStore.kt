@@ -26,6 +26,7 @@ data class ProfilePrefs(
     val pins: List<String>,
     /** How many times this profile opened each app from SpiderVision (package → count). */
     val launches: Map<String, Int> = emptyMap(),
+    val sounds: Boolean = true,
 )
 
 data class LauncherPrefs(val active: String, val profiles: Map<String, ProfilePrefs>) {
@@ -64,6 +65,7 @@ class LauncherStore(private val context: Context) {
             List(4) { saved.getOrNull(it) ?: pkgOf(d.pins[it]) }
         },
         launches = p[k(d.id, "launches")]?.toCounts() ?: emptyMap(),
+        sounds = p[b(d.id, "sounds")] ?: true,
     )
 
     private fun write(p: MutablePreferences, id: String, v: ProfilePrefs) {
@@ -74,6 +76,7 @@ class LauncherStore(private val context: Context) {
         p[k(id, "cover")] = v.cover
         p[k(id, "pins")] = v.pins.joinToString(",")
         p[k(id, "launches")] = v.launches.entries.joinToString(",") { "${it.key}=${it.value}" }
+        p[b(id, "sounds")] = v.sounds
     }
 
     /** Counts one launch of [pkg] for profile [id]; used to find each person's most-opened app. */
@@ -112,7 +115,7 @@ class LauncherStore(private val context: Context) {
     suspend fun reset(id: String) {
         context.dataStore.edit { p ->
             listOf("favorites", "order", "cover", "pins", "launches").forEach { p.remove(k(id, it)) }
-            listOf("customIcons", "largeText").forEach { p.remove(b(id, it)) }
+            listOf("customIcons", "largeText", "sounds").forEach { p.remove(b(id, it)) }
         }
     }
 }

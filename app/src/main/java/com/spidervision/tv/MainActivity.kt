@@ -6,12 +6,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.spidervision.tv.ui.HomeScreen
+import com.spidervision.tv.ui.SoundFx
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SoundFx.init(applicationContext)
         setContent { HomeScreen(homePresses, ::isHomeApp) }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        SoundFx.hush() // focus is restored automatically on return; don't tick for it
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) SoundFx.release()
+        super.onDestroy()
     }
 
     /** The Home key while SpiderVision is already showing arrives here (singleTask). */

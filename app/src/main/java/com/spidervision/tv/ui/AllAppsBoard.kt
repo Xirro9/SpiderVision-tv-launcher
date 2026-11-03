@@ -74,7 +74,13 @@ fun AllAppsBoard(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(C.bg)) {
+    val enter = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) { enter.animateTo(1f, androidx.compose.animation.core.tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+    Box(
+        Modifier.fillMaxSize().background(C.bg).graphicsLayer {
+            translationY = (1f - enter.value) * 24.dp.toPx()
+        },
+    ) {
         Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.5f).fillMaxHeight(0.34f).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.halftone(C.halftonePage, 5.5.dp, 1.2.dp))
         Column(Modifier.fillMaxSize().padding(start = 28.8.dp, end = 28.8.dp, top = 16.dp, bottom = 10.8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
