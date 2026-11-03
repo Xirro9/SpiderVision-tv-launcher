@@ -70,3 +70,43 @@ Remaining option, **not done** (needs separate approval): also disable
 `com.google.android.tungsten.setupwraith`, leaving SpiderVision as the only Home candidate above
 `FallbackHome`. Risks: Google TV's setup/recovery and account re-verification screens go away,
 and a factory reset or major update may need both re-enabled. Rollback would re-enable both.
+
+## Step C — also disable `setupwraith` (owner-approved 2026-11-03): **works, kept**
+
+Backup extended first (`setupwraith-enabled.txt`, `meminfo-before-home-swap.txt`) and the rollback
+script updated to re-enable both packages.
+
+```powershell
+adb shell cmd role add-role-holder android.app.role.HOME com.spidervision.tv
+adb shell pm disable-user --user 0 com.google.android.apps.tv.launcherx
+adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith
+```
+
+| Test | Result |
+| --- | --- |
+| Home candidates left | SpiderVision, `tv.settings/.system.FallbackHome` |
+| Home key (from the board and from TV Settings) | SpiderVision ✅ |
+| Back on the board | stays on SpiderVision ✅ |
+| YouTube, Netflix, Play Store, Spotify → Home | each opened, Home returned to SpiderVision ✅ |
+| Input picker → Back | opens, returns to SpiderVision ✅ |
+| Reboot | boots straight into SpiderVision (~30 s), role kept, both packages still disabled ✅ |
+| Wi-Fi / NextDNS after reboot | connected; `dns.nextdns.io` reachable; Private DNS unchanged ✅ |
+| `launcherx` / `setupwraith` processes | not running ✅ |
+
+Memory, both measured shortly after a reboot (`dumpsys meminfo`):
+
+| | Google TV home | SpiderVision as Home |
+| --- | --- | --- |
+| Used RAM | 1,485 MB | ~1,418 MB |
+| zRAM: data swapped | 510 MB | ~333 MB |
+| zRAM: physical | 139 MB | ~80 MB |
+| "Free RAM" (includes cached apps) | 732 MB | ~657 MB (more apps kept cached) |
+| Home app PSS | `launcherx` 78–107 MB | SpiderVision 33–38 MB |
+
+Lost while disabled: Google TV's own home rows and recommendations, its "Who's watching?" picker,
+its profile/account re-verification screens, and Google TV setup/recovery. Before a factory reset
+or if a Google TV system update misbehaves, run the rollback first.
+
+**Rollback C** — PC: `ROLLBACK-HOME.ps1` (re-enables both, returns HOME to `setupwraith`,
+checks against the backup). On the TV only: Settings → Apps → See all apps → Show system apps →
+Google TV Home and Setup → Enable each, then Settings → Apps → Default apps → Home app → Google TV.

@@ -1,0 +1,15 @@
+ Free RAM: 660,906K ( 429,026K cached pss + 105,752K cached kernel + 126,128K free)
+ Used RAM: 1,412,385K (1,091,949K used pss + 320,436K kernel)
+ ZRAM: 79,812K physical used for 333,312K in swap (1,023,996K total swap)
+spidervision: 32740 KB
+
+ Free RAM: 660,149K ( 429,617K cached pss + 106,220K cached kernel + 124,312K free)
+ Used RAM: 1,419,363K (1,098,895K used pss + 320,468K kernel)
+ ZRAM: 79,792K physical used for 332,544K in swap (1,023,996K total swap)
+spidervision: 38298 KB
+
+ Free RAM: 651,897K ( 425,613K cached pss + 106,272K cached kernel + 120,012K free)
+ Used RAM: 1,423,690K (1,103,130K used pss + 320,560K kernel)
+ ZRAM: 79,792K physical used for 332,544K in swap (1,023,996K total swap)
+spidervision: 38466 KB
+
