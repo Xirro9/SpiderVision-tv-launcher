@@ -12,8 +12,8 @@ android {
         applicationId = "com.spidervision.tv"
         minSdk = 28
         targetSdk = 34 // the Philips runs Android 14
-        versionCode = 2
-        versionName = "0.2.0-phase2"
+        versionCode = 3
+        versionName = "0.3.0-phase3"
     }
 
     buildTypes {
@@ -33,6 +33,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     // The TV is armeabi-v7a; nothing here ships native code, so no ABI filters are needed.
 }
@@ -46,5 +47,6 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

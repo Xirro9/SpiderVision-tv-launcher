@@ -1,5 +1,6 @@
 package com.spidervision.tv.ui
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
@@ -33,6 +34,9 @@ object C {
     val halftonePanel = Color(0xFF2A2E38)
     val disabled = Color(0xFF6B7080)
 }
+
+/** 1.0 normally; raised by the per-profile "Larger text" setting. Applied by [T]. */
+val LocalTextScale = staticCompositionLocalOf { 1f }
 
 val Bangers = FontFamily(Font(R.font.bangers_regular))
 

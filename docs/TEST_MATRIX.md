@@ -23,9 +23,9 @@ Legend: ✅ pass · ❌ fail · ⏳ not yet run · — not applicable yet
 | Catalog matches real enabled launchable apps | ✅ | 2026-11-02 | 27 = `docs/baseline/leanback-launchable.txt` |
 | Known brands map to installed packages | ✅ | 2026-11-02 | 17 of 18 (Peacock not installed) |
 | Unknown apps show a generic tile and open | ✅ | 2026-11-02 | own banners; TV Settings opened from All apps |
-| Favorites/profiles persist across force-stop and reboot | ⏳ | | |
-| Missing/disabled apps fail gracefully | ⏳ | | |
-| No content pin implies access to provider watch history | ⏳ | | |
+| Favorites/profiles persist across force-stop and reboot | ✅ / ⏳ | 2026-11-02 | force-stop ✅, app update ✅, TV reboot not yet run |
+| Missing/disabled apps fail gracefully | ✅ | 2026-11-02 | missing pins/cover read "Not installed"; launch reports why; options disabled |
+| No content pin implies access to provider watch history | ✅ | 2026-11-02 | pins and cover are labelled app shortcuts |
 | Inputs work or are hidden | ✅ | 2026-11-02 | opens system input picker (HDMI 1–3, AV, Live TV) |
 | NextDNS tile real or visibly not connected | ⏳ | | |
 

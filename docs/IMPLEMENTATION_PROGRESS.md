@@ -76,10 +76,35 @@ Findings:
 - PSS ≈ 73 MB with the All apps banners loaded (debug).
 - Still to do by a person: an unscripted pass with the physical remote from the couch.
 
-## Phases 3–7
+## Phase 3 — persistent personalization
 
-Pending. See the guide for exit gates. Planned remote addition for Phase 3: the remote's **Menu**
-key on an app opens its options (favourite / move), replacing the prototype's "Edit apps" mode.
+| Item | Status | Notes |
+| --- | --- | --- |
+| Per-profile saved state | done | Preferences DataStore (`LauncherStore`): favourites, app order, icon style, larger text, cover pick, 4 pins, plus the active profile. Apps stored by package, so any installed app works |
+| App options from the remote | done | **Menu** key (or long-press OK) on any app panel, pin, cover or All apps tile → side sheet: favourite, Earlier/Later, Move to front, cover pick, pin to slot 1–4. Unavailable actions are disabled, not hidden |
+| Settings sheet | done | Custom/original icons, Larger text (×1.15), Open TV settings, Reset layout (press twice), version |
+| Honest controls | done | No Kids PIN, sleep timer or fake HDMI devices anywhere; network tile still "not connected" |
+| Non-brand apps anywhere | done | Watch/pins/cover/chips fall back to the app's own TV banner or icon |
+| Sheets as dialog windows | done | remote can't wander onto the board behind; Back closes; no dim, blur or animation |
+
+Verified on the TV (2026-11-02, scripted remote presses):
+
+- Menu on the Spotify pin → options sheet; "Add to favorites" + "Make it Mahin's cover pick" →
+  Spotify became the 5th Watch tile and the cover.
+- Force-stop + relaunch: Spotify still cover/favourite. **App update** (`install -r`): still kept.
+- Profile switch to Aria → her own cover (Prime Video); kept after relaunch; Up from the board
+  goes to the active chip.
+- Settings: original icons + larger text applied across the board; Reset restored Mahin's defaults.
+- All apps: Menu → Later moved Max after Crunchyroll, Move to front moved it back; focus followed
+  the app. "Later" correctly disabled on the last favourite.
+- HOME still `launcherx`, 19 disabled packages, no permissions requested.
+
+Not yet verified: persistence across a **TV reboot** (needs a reboot; DataStore is app-private
+storage, so it is expected to hold). Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
+
+## Phases 4–7
+
+Pending. See the guide for exit gates.
 
 ## Device facts that shape the build
 
