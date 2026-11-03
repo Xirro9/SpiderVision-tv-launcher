@@ -21,7 +21,34 @@ Status legend: done · in progress · pending · blocked
 
 ## Phase 1 — native visual skeleton
 
-Pending.
+App name: **SpiderVision** (package `com.spidervision.tv`), built from the Orrery Comic Edition design.
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Compose TV app, banner, `LEANBACK_LAUNCHER` only, no HOME | done | no permissions requested; `<queries>` for TV/launcher intents only |
+| Header, profiles, clock, cover, Watch panels, Favorites, Home base, Settings/Inputs/All apps, footer | done | 12×6 comic grid, sizes = prototype's 1920-px CSS values ÷ 2 |
+| Tokens and fonts | done | Bangers + Manrope bundled (OFL, `licenses/`); no network fonts |
+| 18 brand marks | done | ported path-for-path from the prototype to Compose drawing |
+| Native focus ring | done | single yellow ring, drawn outside the panel |
+| Installed on TV as a normal app, screenshot compared | done | `docs/screenshots/phase1-first-build.png` (2026-11-02) |
+| Honest content | done | cover and Favorites are app shortcuts; network tile says "not connected"; Settings/Inputs/All apps report "later build" |
+| Real app launch | done (early) | `getLeanbackLaunchIntentForPackage` with launcher fallback; full validation is Phase 2 |
+
+First on-device numbers (debug build, idle on the board, 2026-11-02 22:33):
+
+| Metric | SpiderVision (debug) | Stock launcherx (preliminary) |
+| --- | --- | --- |
+| TOTAL PSS | 66–78 MB settling | ~123 MB (+50 MB swapped) |
+| CPU at idle | 0.0 % | not comparable yet |
+
+The debug build is not minified; a release build and a settled stock baseline are needed before
+claiming the < 60 MB target.
+
+Known drift from the reference, to fix before Phase 2 sign-off:
+
+- "Disney+" and "Crunchyroll" names truncate in the one-row Watch panels.
+- The OEM "Art Time" overlay (`com.smartdevice.dailyshortcut`) can sit above any app after idle; it
+  clears on the first remote press. Not caused by SpiderVision; noted for testing.
 
 ## Phases 2–7
 

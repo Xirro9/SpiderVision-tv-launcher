@@ -39,6 +39,8 @@ Fonts: Bangers (display) and Manrope (UI), both SIL OFL 1.1, bundled as resource
 
 | Area | Prototype | Native | Why |
 | --- | --- | --- | --- |
+| Masthead / app name | "Orrery" | "SpiderVision" | owner's request (2026-11-02) |
+| Favorites panels | fictional titles ("Late Night Jazz"), LIVE! burst | app name + "App shortcut" + category | no real content data |
 | Cover content | fictional "The Quiet Meridian", 47 min left, progress | user-configured app shortcut, no progress bar | no real watch history is available |
 | Network tile | 18,402 queries etc. | "NextDNS stats not connected" | sample data must not look live |
 | Inputs tile | HDMI device names | opens system input chooser or hidden | no fake device map |

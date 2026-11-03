@@ -1,6 +1,6 @@
-# Orrery TV Launcher
+# SpiderVision — Orrery TV launcher
 
-A native, lightweight Android TV home screen for a Philips 24NA 4K (Android TV 14), built in
+**SpiderVision** is a native, lightweight Android TV home screen for a Philips 24NA 4K (Android TV 14), built in
 Kotlin and Jetpack Compose for TV from the approved **Orrery Comic Edition** design.
 
 It installs as a normal TV app alongside the stock Google TV launcher. It does not replace

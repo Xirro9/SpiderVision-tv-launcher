@@ -1,20 +1,20 @@
 # Rollback
 
-Orrery is installed as a **normal app**. It does not replace HOME, disable anything, or
+SpiderVision is installed as a **normal app**. It does not replace HOME, disable anything, or
 change DNS or TV settings. Removing it fully restores the previous state.
 
-## Remove Orrery
+## Remove SpiderVision
 
-On the TV: Settings → Apps → Orrery → Uninstall.
+On the TV: Settings → Apps → SpiderVision → Uninstall.
 
 Or from the PC, in the folder that contains `adb.exe`:
 
 ```powershell
 .\adb.exe devices -l
-.\adb.exe -s 192.168.1.79:5555 uninstall com.orrery.tv
+.\adb.exe -s 192.168.1.79:5555 uninstall com.spidervision.tv
 ```
 
-Only ever uninstall `com.orrery.tv`. Never uninstall or disable a stock package.
+Only ever uninstall `com.spidervision.tv`. Never uninstall or disable a stock package.
 
 ## Confirm the TV is back to its baseline
 
@@ -26,10 +26,10 @@ Only ever uninstall `com.orrery.tv`. Never uninstall or disable a stock package.
 The HOME result must still be `com.google.android.apps.tv.launcherx/.home.HomeActivity`, and
 the disabled list must match `docs/baseline/disabled-packages.txt` (19 packages).
 
-## If Orrery misbehaves while open
+## If SpiderVision misbehaves while open
 
 - Press Home on the remote: the stock Google TV home is still the default.
-- Or force-stop it: `.\adb.exe -s 192.168.1.79:5555 shell am force-stop com.orrery.tv`
+- Or force-stop it: `.\adb.exe -s 192.168.1.79:5555 shell am force-stop com.spidervision.tv`
 
 ## Earlier TV backups
 
