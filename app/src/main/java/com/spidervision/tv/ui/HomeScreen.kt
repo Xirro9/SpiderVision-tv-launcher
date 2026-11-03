@@ -86,9 +86,16 @@ import com.spidervision.tv.apps.moveApp
 import com.spidervision.tv.apps.orderedApps
 import com.spidervision.tv.network.DnsStatus
 import com.spidervision.tv.network.DnsStatusReader
+import com.spidervision.tv.network.FetchResult
+import com.spidervision.tv.network.KeyVault
+import com.spidervision.tv.network.NetView
+import com.spidervision.tv.network.NetworkStatusCache
+import com.spidervision.tv.network.NextDnsClient
 import com.spidervision.tv.profiles.DEFAULT_PROFILES
 import com.spidervision.tv.profiles.LauncherStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -146,7 +153,9 @@ fun HomeScreen() {
     val saved by store.prefs.collectAsState(initial = null)
 
     var installed by remember { mutableStateOf<Map<String, InstalledApp>>(emptyMap()) }
-    var dns by remember { mutableStateOf(DnsStatus("", "")) }
+    var net by remember { mutableStateOf(NetView(DnsStatus("", ""), linked = false, stats = null, error = null)) }
+    var netTick by remember { mutableStateOf(0) }
+    var showNetwork by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     var showAllApps by remember { mutableStateOf(false) }
     var optionsFor by remember { mutableStateOf<String?>(null) }
@@ -169,11 +178,52 @@ fun HomeScreen() {
     LaunchedEffect(Unit) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             installed = AppCatalog.loadInstalled(context)
-            dns = DnsStatusReader.read(context)
-            if (!showAllApps && optionsFor == null && !showSettings) restoreFocus()
+            if (!showAllApps && optionsFor == null && !showSettings && !showNetwork) restoreFocus()
             while (true) {
                 now = LocalDateTime.now()
                 delay(60_000L - System.currentTimeMillis() % 60_000L)
+            }
+        }
+    }
+
+    // NextDNS: refresh only while the screen is in front; cache totals; back off on failure.
+    LaunchedEffect(netTick) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            var retry = 2 * 60_000L
+            var force = netTick > 0
+            while (true) {
+                val dns = DnsStatusReader.read(context)
+                val linked = KeyVault.isLinked(context)
+                val profileId = dns.nextDnsProfile
+                if (!linked || profileId == null) {
+                    net = NetView(dns, linked, null, if (linked) "The TV's Private DNS isn't set to NextDNS" else null)
+                    delay(15 * 60_000L); continue
+                }
+                val cached = net.stats ?: NetworkStatusCache.load(context)
+                val age = cached?.let { System.currentTimeMillis() - it.fetchedAt }
+                if (age != null && age < 10 * 60_000L && !force) {
+                    net = NetView(dns, true, cached, null)
+                    delay(10 * 60_000L - age); continue
+                }
+                force = false
+                net = NetView(dns, true, cached, null, loading = true)
+                val key = withContext(Dispatchers.IO) { KeyVault.load(context) }
+                val result = if (key == null) FetchResult.Failed("The saved key couldn't be read; link NextDNS again", authProblem = true)
+                else withContext(Dispatchers.IO) { NextDnsClient.fetch(profileId, key) }
+                when (result) {
+                    is FetchResult.Ok -> {
+                        NetworkStatusCache.save(context, result.stats)
+                        net = NetView(dns, true, result.stats, null)
+                        retry = 2 * 60_000L
+                        delay(10 * 60_000L)
+                    }
+                    is FetchResult.Failed -> {
+                        net = NetView(dns, true, cached, result.message, result.authProblem)
+                        // A bad key won't fix itself: wait for the next visit or a manual refresh.
+                        delay(if (result.authProblem) 60 * 60_000L else retry)
+                        retry = (retry * 2).coerceAtMost(60 * 60_000L)
+                    }
+                }
             }
         }
     }
@@ -279,9 +329,7 @@ fun HomeScreen() {
                             PinPanel(pkg, installed, i, profile.name, pp.customIcons, art.art[pkg], Modifier.nav("f$i"), onFocusLabel, { openOptions(pkg) }) { launch(pkg) }
                         }
 
-                        NetworkPanel(dns, Modifier.nav("net"), onFocusLabel) {
-                            ui.status = "Live NextDNS stats aren't connected yet"
-                        }
+                        NetworkPanel(net, Modifier.nav("net"), onFocusLabel) { showNetwork = true }
                         Panel("Settings — icons, text size and ${profile.name}'s layout", Modifier.nav("settings"), C.surface, onFocusLabel, onClick = { showSettings = true }) {
                             Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
                                 StrokeIcon(Icons.gear, C.silver, 19.2.dp)
@@ -386,6 +434,10 @@ fun HomeScreen() {
                     }
                 }
             }
+        }
+
+        if (showNetwork) {
+            NetworkSheet(net, onRefresh = { netTick++ }) { showNetwork = false; scope.launch { restoreFocus() } }
         }
 
         if (showSettings) {
@@ -615,39 +667,156 @@ private fun PinPanel(
     }
 }
 
+private val timeFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+private fun Long.clock(): String = java.time.Instant.ofEpochMilli(this).atZone(java.time.ZoneId.systemDefault()).format(timeFmt)
+private fun Long.grouped(): String = java.text.NumberFormat.getIntegerInstance().format(this)
+private fun Double.percent(): String = String.format(java.util.Locale.US, "%.1f%%", this)
+
 @Composable
-private fun NetworkPanel(dns: DnsStatus, modifier: Modifier, onFocusLabel: (String) -> Unit, onClick: () -> Unit) {
-    Panel("Home base — network status", modifier, C.surface, onFocusLabel, onClick = onClick) {
+private fun NetworkPanel(net: NetView, modifier: Modifier, onFocusLabel: (String) -> Unit, onClick: () -> Unit) {
+    val stats = net.stats
+    val badge = when {
+        !net.linked -> "NOT LINKED"
+        net.error != null -> if (net.authProblem) "CHECK KEY" else "OFFLINE"
+        net.loading && stats == null -> "LOADING"
+        else -> "LIVE · 24 H"
+    }
+    val live = badge.startsWith("LIVE")
+    Panel("Home base — press OK for NextDNS details", modifier, C.surface, onFocusLabel, onClick = onClick) {
         Column(Modifier.fillMaxSize().padding(start = PAD, end = PAD, bottom = PAD, top = 25.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StrokeIcon(Icons.shield, C.blue, 13.4.dp, strokeWidth = 1.8f)
                 Spacer(Modifier.width(5.dp))
-                T(dns.title, 10.6.sp, weight = 700)
+                T(net.dns.title, 10.6.sp, weight = 700)
                 Spacer(Modifier.weight(1f))
                 T(
-                    "NOT LINKED", 6.2.sp, color = C.silver, weight = 600, tracking = 0.08.em,
-                    modifier = Modifier.clip(CircleShape).background(C.navy).padding(horizontal = 5.dp, vertical = 1.dp),
+                    badge, 6.2.sp, color = if (live) C.text else C.silver, weight = 600, tracking = 0.08.em,
+                    modifier = Modifier.clip(CircleShape).background(if (live) C.blue else C.navy).padding(horizontal = 5.dp, vertical = 1.dp),
                 )
             }
             Spacer(Modifier.height(7.dp))
-            T("NextDNS stats not connected", 10.sp, weight = 700)
-            Spacer(Modifier.height(2.dp))
-            T("${dns.detail} Query counts appear once a secure link is set up.", 7.2.sp, color = C.silver, maxLines = 3, lineHeight = 10.sp)
+            if (stats != null) {
+                Row {
+                    NetStat("Queries", stats.queries.grouped(), Modifier.weight(1f))
+                    NetStat("Blocked", stats.blockedPercent.percent(), Modifier.weight(1f), C.red)
+                    NetStat("Blocked #", stats.blocked.grouped(), Modifier.weight(1f))
+                }
+                val err = net.error
+                if (err != null) {
+                    Spacer(Modifier.height(3.dp))
+                    T("$err · showing ${stats.fetchedAt.clock()} numbers", 7.sp, color = C.red, maxLines = 2)
+                }
+            } else {
+                T(
+                    when {
+                        !net.linked -> "NextDNS stats not connected"
+                        net.error != null -> net.error
+                        else -> "Loading NextDNS stats…"
+                    },
+                    10.sp, weight = 700, maxLines = 2,
+                )
+                Spacer(Modifier.height(2.dp))
+                T(
+                    if (!net.linked) "${net.dns.detail} Link it from your PC to see live counts." else "Press OK for details.",
+                    7.2.sp, color = C.silver, maxLines = 3, lineHeight = 10.sp,
+                )
+            }
             Spacer(Modifier.weight(1f))
-            // Empty chart frame: deliberately no bars with fake values.
+            val hourly = stats?.hourly.orEmpty()
+            val max = (hourly.maxOrNull() ?: 0L).coerceAtLeast(1L)
             Row(Modifier.fillMaxWidth().height(32.4.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                repeat(12) { Box(Modifier.weight(1f).height(2.dp).background(C.rule)) }
+                if (hourly.isEmpty()) {
+                    // Empty frame: never bars with made-up values.
+                    repeat(12) { Box(Modifier.weight(1f).height(2.dp).background(C.rule)) }
+                } else {
+                    hourly.forEachIndexed { i, v ->
+                        Box(
+                            Modifier.weight(1f).fillMaxHeight((v.toFloat() / max).coerceAtLeast(0.04f))
+                                .background(if (i == hourly.lastIndex) C.red else C.blue),
+                        )
+                    }
+                }
             }
             Spacer(Modifier.height(4.dp))
             Row {
                 T("12 h ago", 6.2.sp, color = C.silver)
                 Spacer(Modifier.weight(1f))
-                T("No data yet", 6.2.sp, color = C.silver)
+                T(if (stats != null) "Updated ${stats.fetchedAt.clock()}" else "No data yet", 6.2.sp, color = C.silver)
                 Spacer(Modifier.weight(1f))
                 T("Now", 6.2.sp, color = C.silver)
             }
         }
         Caption("Home base", 7.2.sp, Modifier.align(Alignment.TopStart))
+    }
+}
+
+@Composable
+private fun NetStat(label: String, value: String, modifier: Modifier, color: Color = C.text) {
+    Column(modifier) {
+        T(label.uppercase(), 6.7.sp, color = C.silver, weight = 600, tracking = 0.1.em)
+        Spacer(Modifier.height(1.dp))
+        T(value, 11.sp, color = color, weight = 700)
+    }
+}
+
+/** Home base details: honest wording about what the numbers are, plus link status. */
+@Composable
+private fun NetworkSheet(net: NetView, onRefresh: () -> Unit, onDismiss: () -> Unit) {
+    val stats = net.stats
+    val profileId = net.dns.nextDnsProfile
+    SideSheet(
+        title = "Home base",
+        subtitle = if (profileId != null) "NextDNS profile $profileId · this TV's Private DNS" else net.dns.detail,
+        onDismiss = onDismiss,
+        header = { T(net.dns.title, 18.sp, family = Bangers, weight = 400, tracking = 0.04.em) },
+    ) { first ->
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (stats != null) {
+                SheetLabel("Last 24 hours")
+                Row {
+                    NetStat("Queries", stats.queries.grouped(), Modifier.weight(1f))
+                    NetStat("Blocked", stats.blocked.grouped(), Modifier.weight(1f), C.red)
+                    NetStat("Rate", stats.blockedPercent.percent(), Modifier.weight(1f), C.red)
+                }
+                val err = net.error
+                T(
+                    "Updated ${stats.fetchedAt.clock()}" + (if (err != null) " · $err" else ""),
+                    7.7.sp, color = if (err != null) C.red else C.silver, maxLines = 2,
+                )
+                if (stats.topBlocked.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    SheetLabel("Most blocked")
+                    stats.topBlocked.forEach { (domain, n) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            T(domain, 8.6.sp, Modifier.weight(1f))
+                            T(n.grouped(), 8.6.sp, color = C.silver)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                T(
+                    "Counts are DNS lookups from devices using this NextDNS profile. A blocked lookup isn't the same as a blocked ad.",
+                    7.2.sp, color = C.silver, maxLines = 3, lineHeight = 10.sp,
+                )
+            } else {
+                T(
+                    when {
+                        !net.linked -> "Live stats aren't linked."
+                        net.error != null -> net.error
+                        else -> "Loading…"
+                    },
+                    10.sp, weight = 700, maxLines = 2,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            SheetButton("Refresh now", Modifier.fillMaxWidth().focusRequester(first), enabled = net.linked) { onRefresh() }
+            SheetLabel(if (net.linked) "To unlink" else "To link")
+            T(
+                if (net.linked) "On your PC run tools\\link-nextdns.ps1 -Unlink. The key is stored encrypted on this TV only."
+                else "On your PC run tools\\link-nextdns.ps1 and paste your NextDNS API key when asked. It stays between your PC and this TV.",
+                7.7.sp, color = C.silver, maxLines = 4, lineHeight = 11.sp,
+            )
+        }
     }
 }
 

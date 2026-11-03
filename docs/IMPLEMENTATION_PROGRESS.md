@@ -110,7 +110,21 @@ played). Scripts now read the selected item before pressing OK.
 
 Debug-build PSS after heavy use: ~85 MB; tuning is Phase 5.
 
-## Phases 4–7
+## Phase 4 — network widget (NextDNS) and real profile names
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Profile chips = the household's Google TV profiles | done | Mahin, Tabitha, John, Raph. Android doesn't let apps read or switch Google TV profiles (4 Google accounts + 1 TV profile user found read-only; the profile chooser only accepts a private Google intent), so each chip keeps its own SpiderVision layout |
+| Stats repository behind the tile | done | `NextDnsClient` (HTTPS, no extra libraries), `NetView` states |
+| Credential delivery | done | owner chose "key stored on the TV": ADB-only `ProvisionReceiver` + Keystore AES-GCM vault; `tools/link-nextdns.ps1` |
+| Honest states | done | not linked / loading / live / offline with cached numbers / check key; empty chart frame when no data |
+| Refresh only while visible | done | 10 min interval, exponential backoff, no service |
+| Tested on TV | partial | not linked ✅, malformed key rejected ✅, fake key → "NextDNS rejected the saved key" via a real API call ✅, key absent from logcat ✅, unlink ✅ |
+| Verified against NextDNS web | open | needs the owner to link the real key (see `docs/NEXTDNS.md`) |
+
+New permission: `INTERNET` (only for NextDNS).
+
+## Phases 5–7
 
 Pending. See the guide for exit gates.
 

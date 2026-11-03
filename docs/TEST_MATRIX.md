@@ -27,15 +27,15 @@ Legend: ✅ pass · ❌ fail · ⏳ not yet run · — not applicable yet
 | Missing/disabled apps fail gracefully | ✅ | 2026-11-02 | missing pins/cover read "Not installed"; launch reports why; options disabled |
 | No content pin implies access to provider watch history | ✅ | 2026-11-02 | pins and cover are labelled app shortcuts |
 | Inputs work or are hidden | ✅ | 2026-11-02 | opens system input picker (HDMI 1–3, AV, Live TV) |
-| NextDNS tile real or visibly not connected | ⏳ | | |
+| NextDNS tile real or visibly not connected | ✅ / ⏳ | 2026-11-02 | not linked + rejected-key states ✅; live numbers vs NextDNS web pending the real key |
 
 ## Safety and performance
 
 | Check | Result | Date | Notes |
 | --- | --- | --- | --- |
 | Stock launcher, DNS and disabled-package set untouched | ✅ | 2026-11-02 | HOME = launcherx, 19 disabled, unchanged |
-| No key/token/secret in source, APK or logs | ⏳ | | |
-| No background service or unneeded permission | ✅ | 2026-11-02 | no services, no permissions |
+| No key/token/secret in source, APK or logs | ✅ | 2026-11-02 | key only via ADB, encrypted on TV; test key absent from logcat and from the vault file in plain text |
+| No background service or unneeded permission | ✅ | 2026-11-02 | no services; only INTERNET (NextDNS) |
 | 5+ min idle PSS / CPU / swap recorded vs stock | ⏳ | | |
 | Reboot: remote, audio, HDMI, casting, playback OK | ⏳ | 2026-11-02 | rebooted once: ADB, HOME, DNS, disabled set OK; remote in use after boot; audio/HDMI/casting/playback not yet checked |
 | 20-minute navigation soak: no crash/ANR/growth | ⏳ | | |

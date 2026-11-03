@@ -4,26 +4,25 @@ import androidx.compose.ui.graphics.Color
 import com.spidervision.tv.ui.C
 
 /**
- * Launcher-local household profiles. They only change which shortcuts SpiderVision shows;
- * they are not Google accounts and do not restrict anything.
- *
- * Phase 1 keeps these in memory. Persistence (DataStore) arrives in Phase 3.
+ * SpiderVision profiles, named after the household's Google TV profiles. Each keeps its own
+ * saved layout. They are not the Google accounts themselves: Android does not let other apps
+ * read or switch Google TV profiles, so switching here changes only SpiderVision's layout.
  */
 data class Profile(
     val id: String,
     val name: String,
     val color: Color,
-    /** Brand key opened by the cover panel. */
+    /** Brand key opened by the cover panel, until the person picks their own. */
     val coverApp: String,
-    /** Brand keys pinned in the Favorites panels, in order. */
+    /** Brand keys pinned in the Favorites panels, until the person pins their own. */
     val pins: List<String>,
 )
 
 val DEFAULT_PROFILES = listOf(
     Profile("mahin", "Mahin", C.red, "netflix", listOf("spotify", "crunchyroll", "youtube", "ytmusic")),
-    Profile("aria", "Aria", C.blue, "prime", listOf("hulu", "max", "instagram", "applemusic")),
-    Profile("kids", "Kids", Color(0xFFE9C46A), "disney", listOf("disney", "pluto", "tubi", "spotify")),
-    Profile("guest", "Guest", C.silver, "tubi", listOf("youtube", "aircast", "roku", "googletv")),
+    Profile("tabitha", "Tabitha", C.blue, "prime", listOf("hulu", "max", "instagram", "applemusic")),
+    Profile("john", "John", Color(0xFFE9C46A), "max", listOf("youtube", "tubi", "pluto", "spotify")),
+    Profile("raph", "Raph", C.silver, "youtube", listOf("crunchyroll", "ytmusic", "roku", "aircast")),
 )
 
 /** Favourite apps lead the Watch panels; the rest follow in this order. */

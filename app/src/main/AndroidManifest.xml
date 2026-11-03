@@ -5,6 +5,9 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="true" />
 
+    <!-- Only used to fetch NextDNS statistics once linked (see docs/NEXTDNS.md). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Package visibility: only apps that expose a TV or regular launcher entry. -->
     <queries>
         <intent>
@@ -36,5 +39,12 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Link/unlink NextDNS from a PC over ADB only: the sender must hold WRITE_SECURE_SETTINGS,
+             which the ADB shell has and ordinary apps cannot get. -->
+        <receiver
+            android:name=".network.ProvisionReceiver"
+            android:exported="true"
+            android:permission="android.permission.WRITE_SECURE_SETTINGS" />
     </application>
 </manifest>
