@@ -142,7 +142,9 @@ Full numbers: `docs/PERFORMANCE.md`.
 Done with owner approval, then rolled back: the firmware keeps the Home button on Google TV's own
 system Home activities (`launcherx`, then `setupwraith`) regardless of the HOME role. Backup and
 verified rollback in `platform-toolsackup-2026-11-03_home-phase6`. Details:
-`docs/HOME_EXPERIMENT.md`. Next option (disable `setupwraith` too) awaits a separate decision.
+`docs/HOME_EXPERIMENT.md`. Then (owner-approved) `setupwraith` was disabled as well: **SpiderVision is now the TV's Home**,
+survives a reboot, and the Google TV home no longer runs (Used RAM ~67 MB lower, swap ~177 MB
+lower). The rollback script re-enables both packages.
 
 ## Phase 7
 
