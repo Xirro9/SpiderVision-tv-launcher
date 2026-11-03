@@ -146,9 +146,18 @@ verified rollback in `platform-toolsackup-2026-11-03_home-phase6`. Details:
 survives a reboot, and the Google TV home no longer runs (Used RAM ~67 MB lower, swap ~177 MB
 lower). The rollback script re-enables both packages.
 
-## Phase 7
+## Phase 7 — signed release 1.0.0
 
-Pending.
+| Item | Status | Notes |
+| --- | --- | --- |
+| Private release key | done | RSA 4096, PKCS12, in `%USERPROFILE%\.spidervision\` (outside the repo, `*.jks`/`keystore.properties` also git-ignored); cert SHA-256 `c2af141e…f67a` |
+| Key rotation | done | APK signature scheme v3 lineage debug key → release key, so 1.0.0 installs as an update over the debug-signed builds |
+| Build | done | `versionCode 10`, `versionName 1.0.0`, R8 + resource shrinking; Gradle emits it unsigned, `tools/sign-release.ps1` signs it |
+| Signed APK | done | `release/SpiderVision-1.0.0.apk` (git-ignored, contains owner art), 4.0 MB, SHA-256 `9cd57d9bdbb0a0fdb96a166281a421fadbd3fb4b794037ec7d83b9047ee8c089`; verifies with v3/v3.1 |
+| Unit tests | done | 11 / 11 pass |
+| Installed on the TV | done | `tools/install.ps1`: SHA-256 checked, `adb install -r` → Success, `versionName=1.0.0`, `firstInstallTime` unchanged (data kept), HOME role still `com.spidervision.tv` |
+| On-screen check of 1.0.0 | pending | TV was asleep at install time (02:35); intro-once-per-boot and final frame timings to check when it's next on |
+| Repo tidy | done | README, changelog, install script; blank/duplicate screenshots removed |
 
 ## Device facts that shape the build
 
