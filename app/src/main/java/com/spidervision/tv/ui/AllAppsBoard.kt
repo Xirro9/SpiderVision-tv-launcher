@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -106,10 +106,20 @@ fun AllAppsBoard(
                     horizontalArrangement = Arrangement.spacedBy(7.7.dp),
                     verticalArrangement = Arrangement.spacedBy(7.7.dp),
                 ) {
-                    items(ordered, key = { it.pkg }, span = { GridItemSpan(if (it.pkg in favorites) 2 else 1) }) { app ->
+                    itemsIndexed(ordered, key = { _, it -> it.pkg }, span = { _, it -> GridItemSpan(if (it.pkg in favorites) 2 else 1) }) { i, app ->
+                        // Tiles cascade in, 18 ms apart, the first time they're shown.
+                        val appear = remember { androidx.compose.animation.core.Animatable(0f) }
+                        LaunchedEffect(Unit) {
+                            kotlinx.coroutines.delay(18L * i.coerceAtMost(20))
+                            appear.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 420f))
+                        }
                         BoardTile(
                             app, app.pkg in favorites, custom, art.art[app.pkg], ui,
                             Modifier.height(TILE_HEIGHT)
+                                .graphicsLayer {
+                                    alpha = appear.value.coerceIn(0f, 1f)
+                                    translationY = (1f - appear.value) * 18.dp.toPx()
+                                }
                                 .focusRequester(reqFor(app.pkg))
                                 .onFocusChanged { if (it.isFocused) lastFocus[0] = app.pkg },
                             onMenu = { onMenu(app.pkg) },
@@ -134,10 +144,16 @@ private fun BoardTile(
         val style = BRAND_STYLES.getValue(brand.key)
         val labelColor = if (custom) C.text else style.label
         Panel(label, modifier, if (custom) C.suit else style.bg, { ui.focused = it }, onMenu, onClick) {
-            if (custom) WebCorner(C.webOnTile, Modifier.align(Alignment.TopEnd).fillMaxHeight(0.36f).heightIn(max = 30.dp).aspectRatio(1f))
+            if (custom) BrandArt(brand.key, style.customInk, webSize = 30.dp)
             Column(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp)) {
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    BrandMark(brand.key, custom, Modifier.fillMaxWidth().fillMaxHeight(0.8f))
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = if (custom) Alignment.TopStart else Alignment.Center) {
+                    if (custom) {
+                        MarkPlate(Modifier.fillMaxHeight(0.78f).aspectRatio(1.7f, matchHeightConstraintsFirst = true)) {
+                            BrandMark(brand.key, custom, Modifier.fillMaxSize())
+                        }
+                    } else {
+                        BrandMark(brand.key, custom, Modifier.fillMaxWidth().fillMaxHeight(0.8f))
+                    }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (favorite) T("★ ", 9.6.sp, color = if (custom) C.red else labelColor, weight = 700)

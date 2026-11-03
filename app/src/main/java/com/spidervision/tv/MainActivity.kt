@@ -5,7 +5,12 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import com.spidervision.tv.ui.HomeScreen
+import com.spidervision.tv.ui.SplashOverlay
+import com.spidervision.tv.ui.SplashState
 import com.spidervision.tv.ui.SoundFx
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -13,7 +18,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SoundFx.init(applicationContext)
-        setContent { HomeScreen(homePresses, ::isHomeApp) }
+        if (savedInstanceState == null) SplashState.decide(applicationContext)
+        setContent {
+            // The intro draws from the very first frame, before saved layouts finish loading.
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(homePresses, ::isHomeApp)
+                if (SplashState.visible) SplashOverlay { SplashState.visible = false }
+            }
+        }
     }
 
     override fun onResume() {

@@ -18,6 +18,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.composed
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -138,6 +141,47 @@ private val WATCH_CELLS = listOf(
 private val SHORT_SLOTS = setOf(1, 3, 4, 5)
 private val FAV_CELLS = listOf(Cell(5, 7, 4, 6), Cell(7, 10, 4, 5), Cell(7, 10, 5, 6), Cell(5, 10, 6, 7))
 private val PROFILE_KEYS = listOf(Key.One, Key.Two, Key.Three, Key.Four)
+private val PANEL_ORDER = listOf("cover", "w0", "w1", "w2", "w3", "w4", "w5", "f0", "f1", "f2", "f3", "net", "settings", "inputs", "allapps")
+
+/** Panels pop in one after another (after the intro): up, from slightly smaller, 40 ms apart. */
+private fun Modifier.appear(index: Int): Modifier = composed {
+    val a = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { SplashState.visible }.first { !it }
+        delay(40L * index.coerceAtLeast(0))
+        a.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 380f))
+    }
+    graphicsLayer {
+        val v = a.value
+        alpha = v.coerceIn(0f, 1f)
+        translationY = (1f - v) * 22.dp.toPx()
+        scaleX = 0.94f + 0.06f * v
+        scaleY = 0.94f + 0.06f * v
+    }
+}
+
+/** Dark plate behind a logo so it reads over any art. */
+@Composable
+fun MarkPlate(modifier: Modifier, content: @Composable BoxScope.() -> Unit) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(C.suit.copy(alpha = 0.8f))
+            .border(1.dp, C.cream.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
+}
+
+/** Art + scrim + brand stripe + web, shared by every custom app tile. */
+@Composable
+fun BoxScope.BrandArt(key: String, accent: Color, webSize: Dp = 42.dp) {
+    APP_ART[key]?.let { ArtBackground(it, Modifier.matchParentSize()) }
+    Box(Modifier.matchParentSize().background(TILE_SCRIM))
+    WebCorner(C.cream.copy(alpha = 0.28f), Modifier.align(Alignment.TopEnd).fillMaxHeight(0.3f).heightIn(max = webSize).aspectRatio(1f))
+    Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(accent))
+}
 private val PANEL_IDS = listOf("cover", "net", "settings", "inputs", "allapps") + (0..5).map { "w$it" } + (0..3).map { "f$it" }
 
 @Composable
@@ -327,12 +371,14 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                         down = n.down?.let(req::getValue) ?: FocusRequester.Cancel
                     }
                     .onFocusChanged { if (it.isFocused) lastFocus[0] = id }
+                    .appear(PANEL_ORDER.indexOf(id))
             }
 
             val enter = remember { Animatable(0f) }
             LaunchedEffect(Unit) { enter.animateTo(1f, tween(220, easing = FastOutSlowInEasing)) }
             Box(
                 Modifier.fillMaxSize().background(C.bg).onPreviewKeyEvent { e ->
+                    if (SplashState.visible) { SplashState.visible = false; return@onPreviewKeyEvent true }
                     // Remote number keys 1-4 jump straight to a profile.
                     val i = PROFILE_KEYS.indexOf(e.key)
                     if (i >= 0 && i < DEFAULT_PROFILES.size) {
@@ -405,8 +451,10 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
 
                         NetworkPanel(net, Modifier.nav("net"), onFocusLabel) { showNetwork = true }
                         Panel("Settings — icons, text size and ${profile.name}'s layout", Modifier.nav("settings"), C.surface, onFocusLabel, onClick = { showSettings = true }) {
+                            ArtBackground(R.drawable.panel_settings, Modifier.matchParentSize(), BiasAlignment(0f, -0.3f))
+                            Box(Modifier.matchParentSize().background(panelScrim(0.35f, 0.92f)))
                             Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
-                                StrokeIcon(Icons.gear, C.silver, 19.2.dp)
+                                StrokeIcon(Icons.gear, C.text, 19.2.dp)
                                 Column {
                                     T("Settings", 14.4.sp, weight = 700)
                                     Spacer(Modifier.height(3.dp))
@@ -414,9 +462,11 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                                 }
                             }
                         }
-                        Panel("Inputs — press OK to choose HDMI or another TV source", Modifier.nav("inputs"), C.surface, onFocusLabel, onClick = { ui.status = AppCatalog.openInputPicker(context) }) {
+                        Panel("Inputs — press OK to choose HDMI or another TV source", Modifier.nav("inputs"), C.surface, onFocusLabel, onClick = { SoundFx.play(SoundFx.Cue.THWIP); ui.status = AppCatalog.openInputPicker(context) }) {
+                            ArtBackground(R.drawable.panel_inputs, Modifier.matchParentSize())
+                            Box(Modifier.matchParentSize().background(panelScrim(0.3f, 0.92f)))
                             Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
-                                StrokeIcon(Icons.tv, C.silver, 19.2.dp)
+                                StrokeIcon(Icons.tv, C.text, 19.2.dp)
                                 Column {
                                     T("Inputs", 11.5.sp, weight = 700)
                                     Spacer(Modifier.height(3.dp))
@@ -425,8 +475,10 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                             }
                         }
                         Panel("All apps — press OK to see every app on this TV", Modifier.nav("allapps"), C.surface, onFocusLabel, onClick = { SoundFx.play(SoundFx.Cue.THWIP); showAllApps = true }) {
+                            ArtBackground(R.drawable.panel_allapps, Modifier.matchParentSize())
+                            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(0f to C.surface.copy(alpha = 0.96f), 0.45f to C.surface.copy(alpha = 0.85f), 1f to C.surface.copy(alpha = 0.6f))))
                             Row(Modifier.fillMaxSize().padding(horizontal = PAD, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                StrokeIcon(Icons.grid, C.silver, 17.3.dp)
+                                StrokeIcon(Icons.grid, C.text, 17.3.dp)
                                 Spacer(Modifier.width(8.dp))
                                 T("All apps", 12.5.sp, weight = 700)
                                 Spacer(Modifier.weight(1f))
@@ -587,7 +639,9 @@ fun Panel(
     val focused by source.collectIsFocusedAsState()
     // Snappy lift: a quick scale-up with the ring fading in. Only this panel's outer layer moves;
     // its cached artwork is just transformed, not redrawn.
-    val lift by animateFloatAsState(if (focused) 1f else 0f, tween(if (focused) 150 else 110, easing = FastOutSlowInEasing), label = "lift")
+    val liftState = animateFloatAsState(if (focused) 1f else 0f, tween(if (focused) 170 else 120, easing = FastOutSlowInEasing), label = "lift")
+    val lift by liftState
+    val liftRead = remember(liftState) { { liftState.value } }
     LaunchedEffect(focused, label) { if (focused) onFocusLabel(label) }
     LaunchedEffect(focused) { if (focused) SoundFx.play(SoundFx.Cue.TICK) }
     Box(
@@ -612,8 +666,10 @@ fun Panel(
             .clip(PANEL_SHAPE)
             .background(bg)
             .border(1.5.dp, C.cream, PANEL_SHAPE),
-        content = content,
-    )
+    ) {
+        val scope = this
+        CompositionLocalProvider(LocalPanelLift provides liftRead) { scope.content() }
+    }
 }
 
 /**
@@ -627,13 +683,6 @@ private fun CoverPanel(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    // Decoded once at near display size, 16-bit, to keep memory low.
-    val coverArt = remember {
-        BitmapFactory.decodeResource(
-            context.resources, R.drawable.cover_collage,
-            BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 },
-        ).asImageBitmap()
-    }
     var index by remember { mutableStateOf(0) }
     // Bumped whenever focus arrives, so the next swap waits a full interval after you land on it.
     var focusTick by remember { mutableStateOf(0) }
@@ -653,7 +702,11 @@ private fun CoverPanel(
         label, modifier.onFocusChanged { if (it.isFocused) focusTick++ }, C.ink, onFocusLabel,
         onMenu = { pkg?.let(onMenu) }, onClick = { pkg?.let(onOpen) },
     ) {
-        Image(coverArt, null, Modifier.matchParentSize(), alignment = BiasAlignment(0f, -0.64f), contentScale = ContentScale.Crop)
+        // Each featured app brings its own poster; they crossfade as the issue changes.
+        Crossfade(pkg, Modifier.matchParentSize(), animationSpec = tween(520, easing = FastOutSlowInEasing), label = "cover-art") { p ->
+            val res = p?.let { BRAND_BY_PKG[it]?.key }?.let { COVER_ART[it] } ?: R.drawable.cover_netflix
+            ArtBackground(res, Modifier.fillMaxSize(), BiasAlignment(0f, -0.5f))
+        }
         Box(
             Modifier.matchParentSize().drawBehind {
                 val top = size.height * 0.48f
@@ -715,21 +768,33 @@ private fun WatchPanel(app: InstalledApp, slot: Int, custom: Boolean, art: AppAr
     val brand = BRAND_BY_PKG[app.pkg]
     val style = brand?.let { BRAND_STYLES.getValue(it.key) }
     val name = brand?.name ?: app.label
-    val brandTile = style != null
+    val artTile = custom && brand != null
     val labelColor = if (custom || style == null) C.text else style.label
     val bg = when { style == null -> C.surface; custom -> C.suit; else -> style.bg }
     Panel("$name — press OK to open", modifier, bg, onFocusLabel, onMenu, onClick) {
-        if (custom && brandTile) WebCorner(C.webOnTile, Modifier.align(Alignment.TopEnd).fillMaxHeight(0.3f).heightIn(max = 42.dp).aspectRatio(1f))
+        if (artTile) BrandArt(brand!!.key, style!!.customInk)
         if (slot in SHORT_SLOTS) {
             Row(Modifier.fillMaxSize().padding(horizontal = PAD), verticalAlignment = Alignment.CenterVertically) {
                 T(name, 12.5.sp, Modifier.weight(1f), color = labelColor, weight = 700)
                 Spacer(Modifier.width(6.dp))
-                AppMark(app.pkg, custom, art, Modifier.fillMaxHeight(0.5f).aspectRatio(160f / 90f, matchHeightConstraintsFirst = true), name)
+                if (artTile) {
+                    MarkPlate(Modifier.fillMaxHeight(0.48f).aspectRatio(1.7f, matchHeightConstraintsFirst = true)) {
+                        AppMark(app.pkg, custom, art, Modifier.fillMaxSize(), name)
+                    }
+                } else {
+                    AppMark(app.pkg, custom, art, Modifier.fillMaxHeight(0.5f).aspectRatio(160f / 90f, matchHeightConstraintsFirst = true), name)
+                }
             }
         } else {
             Column(Modifier.fillMaxSize().padding(PAD)) {
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    AppMark(app.pkg, custom, art, Modifier.fillMaxWidth().fillMaxHeight(if (slot == 2) 0.6f else 0.52f), name)
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = if (artTile) Alignment.TopStart else Alignment.Center) {
+                    if (artTile) {
+                        MarkPlate(Modifier.padding(top = if (slot == 0) 14.dp else 2.dp).fillMaxWidth(if (slot == 2) 1f else 0.62f).aspectRatio(1.7f)) {
+                            AppMark(app.pkg, custom, art, Modifier.fillMaxSize(), name)
+                        }
+                    } else {
+                        AppMark(app.pkg, custom, art, Modifier.fillMaxWidth().fillMaxHeight(if (slot == 2) 0.6f else 0.52f), name)
+                    }
                 }
                 Row(verticalAlignment = Alignment.Bottom) {
                     if (slot == 2) T(name, 9.1.sp, Modifier.weight(1f), color = labelColor, weight = 700, maxLines = 2)
@@ -742,15 +807,23 @@ private fun WatchPanel(app: InstalledApp, slot: Int, custom: Boolean, art: AppAr
     }
 }
 
-/** Small app badge used inside Favorites panels and sheets. */
+/** Small app badge used inside Favorites panels and sheets: a little poster with the logo on it. */
 @Composable
 fun AppChip(pkg: String, installed: Map<String, InstalledApp>, custom: Boolean, art: AppArt?, height: Dp) {
-    val style = BRAND_BY_PKG[pkg]?.let { BRAND_STYLES.getValue(it.key) }
+    val brand = BRAND_BY_PKG[pkg]
+    val style = brand?.let { BRAND_STYLES.getValue(it.key) }
     val bg = when { style == null -> C.surface; custom -> C.suit; else -> style.bg }
     Box(
-        Modifier.height(height).aspectRatio(1.6f).clip(RoundedCornerShape(3.dp)).background(bg),
+        Modifier.height(height).aspectRatio(1.6f).clip(RoundedCornerShape(4.dp)).background(bg)
+            .border(1.dp, C.cream.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center,
-    ) { AppMark(pkg, custom, art, Modifier.fillMaxSize(if (style != null) 0.7f else 0.92f), appName(pkg, installed)) }
+    ) {
+        if (custom && brand != null) {
+            APP_ART[brand.key]?.let { ArtBackground(it, Modifier.matchParentSize(), zoom = 0f) }
+            Box(Modifier.matchParentSize().background(C.suit.copy(alpha = 0.55f)))
+        }
+        AppMark(pkg, custom, art, Modifier.fillMaxSize(if (style != null) 0.72f else 0.92f), appName(pkg, installed))
+    }
 }
 
 /** A Favorites panel: an honest app shortcut (no fake titles or progress). */
@@ -763,9 +836,14 @@ private fun PinPanel(
     val isInstalled = installed.containsKey(pkg)
     val label = if (isInstalled) "$name — press OK to open" else "$name isn't installed on this TV"
     val sub = when { !isInstalled -> "Not installed"; else -> BRAND_BY_PKG[pkg]?.tag ?: "App" }
+    val artRes = BRAND_BY_PKG[pkg]?.key?.let { APP_ART[it] }
     Panel(label, modifier, C.surface, onFocusLabel, onMenu, onClick) {
         if (index == 0) {
-            Box(Modifier.align(Alignment.BottomEnd).fillMaxHeight(0.85f).fillMaxWidth(0.65f).graphicsLayer().halftone(C.halftonePanel, 4.5.dp, 1.dp))
+            if (artRes != null) {
+                ArtBackground(artRes, Modifier.matchParentSize())
+                Box(Modifier.matchParentSize().background(panelScrim(0.5f, 0.95f, C.suit)))
+            }
+            Box(Modifier.align(Alignment.BottomEnd).fillMaxHeight(0.85f).fillMaxWidth(0.65f).graphicsLayer().halftone(C.halftonePanel.copy(alpha = 0.6f), 4.5.dp, 1.dp))
             Column(Modifier.fillMaxSize().padding(PAD), verticalArrangement = Arrangement.SpaceBetween) {
                 Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     AppChip(pkg, installed, custom, art, 26.dp)
@@ -783,6 +861,12 @@ private fun PinPanel(
             }
             Caption("$profileName's favorite", 7.2.sp, Modifier.align(Alignment.TopStart))
         } else {
+            if (artRes != null) {
+                Box(Modifier.align(Alignment.CenterEnd).fillMaxHeight().fillMaxWidth(0.6f)) {
+                    ArtBackground(artRes, Modifier.matchParentSize())
+                }
+                Box(Modifier.matchParentSize().background(Brush.horizontalGradient(0f to C.surface, 0.4f to C.surface, 0.75f to C.surface.copy(alpha = 0.7f), 1f to C.surface.copy(alpha = 0.35f))))
+            }
             Row(
                 Modifier.fillMaxSize().padding(horizontal = 9.6.dp, vertical = 5.4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -794,7 +878,10 @@ private fun PinPanel(
                     Spacer(Modifier.height(1.dp))
                     T("App shortcut", 7.7.sp, color = C.silver)
                 }
-                T(sub, 8.2.sp, color = if (isInstalled) C.silver else C.red, weight = 600)
+                T(
+                    sub, 8.2.sp, color = if (isInstalled) C.text else C.red, weight = 700,
+                    modifier = Modifier.clip(RoundedCornerShape(3.dp)).background(C.suit.copy(alpha = 0.65f)).padding(horizontal = 5.dp, vertical = 1.dp),
+                )
             }
         }
     }
@@ -816,6 +903,8 @@ private fun NetworkPanel(net: NetView, modifier: Modifier, onFocusLabel: (String
     }
     val live = badge.startsWith("LIVE")
     Panel("Home base — press OK for NextDNS details", modifier, C.surface, onFocusLabel, onClick = onClick) {
+        ArtBackground(R.drawable.panel_homebase, Modifier.matchParentSize())
+        Box(Modifier.matchParentSize().background(panelScrim(0.86f, 0.95f, C.navy)))
         Column(Modifier.fillMaxSize().padding(start = PAD, end = PAD, bottom = PAD, top = 25.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StrokeIcon(Icons.shield, C.blue, 13.4.dp, strokeWidth = 1.8f)

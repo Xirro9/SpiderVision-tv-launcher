@@ -188,3 +188,20 @@ Pending.
 Measured on the TV (release): 40 D-pad moves → 455 frames, median 19 ms, 90th 34 ms, janky 7.7 %
 (slowest frames are the cover title slide); PSS 46 MB (was 36 MB; still < 60 MB target and about
 half of Google TV's home). Number keys verified. Sounds can't be verified audibly from the PC.
+
+## Art pass (2026-11-03, owner request: "use these images, less minimal, gorgeous, startup animation")
+
+| Added | Detail |
+| --- | --- |
+| Owner artwork | 7 supplied images + the original collage in `art-src/` (household use only). `tools/make_art.ps1` crops each to the exact size it's shown at: 18 app tiles (400×300), 4 utility panels, 6 cover posters (600×860). 1.7 MB in the APK |
+| Art tiles | every designed app (Watch, All apps, chips, Favorites) shows its own scene under a dark scrim, logo on a dark plate, brand-colour stripe along the bottom, cream web in the corner |
+| Panels | Settings (symbiote), Inputs (comic-panel hand), All apps (streak lettering), Home base (Daily Bugle Miles under a navy wash), big favourite (its app's art) |
+| Cover | each featured app brings its own poster; posters crossfade as the issue rotates |
+| Intro | live-drawn spider-web build, a spider dropping on its thread, comic POW burst + logo with spider-sense and thwip, punch-out into the board; ~1.6 s, any key skips, once per TV boot |
+| Cascade | board panels pop in one after another after the intro; All apps tiles cascade in |
+| Memory | `ArtImages`: 16-bit decode off the main thread, 8 MB LRU |
+
+Measured on the TV (release, with focus art-zoom): PSS 54 MB; 20 D-pad moves → median 24 ms,
+90th 46 ms. The focus art-zoom was then removed (it forced a full redraw of the tile each frame)
+and the intro limited to once per boot; that final build was installed but the TV went offline
+(standby) before it could be measured or the intro rule checked.
