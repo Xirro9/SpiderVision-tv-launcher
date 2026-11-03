@@ -79,7 +79,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.spidervision.tv.BuildConfig
 import com.spidervision.tv.R
 import com.spidervision.tv.apps.AppCatalog
+import com.spidervision.tv.apps.BRAND_BY_KEY
 import com.spidervision.tv.apps.BRAND_BY_PKG
+import com.spidervision.tv.apps.COVER_ROTATION
+import com.spidervision.tv.apps.mostOpened
 import com.spidervision.tv.apps.Brand
 import com.spidervision.tv.apps.InstalledApp
 import com.spidervision.tv.apps.Move
@@ -154,6 +157,7 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
     val scope = rememberCoroutineScope()
     val store = remember { LauncherStore(context.applicationContext) }
     val saved by store.prefs.collectAsState(initial = null)
+    LaunchedEffect(Unit) { store.migrate() }
 
     var installed by remember { mutableStateOf<Map<String, InstalledApp>>(emptyMap()) }
     var net by remember { mutableStateOf(NetView(DnsStatus("", ""), linked = false, stats = null, error = null)) }
@@ -251,11 +255,18 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
     val profile = DEFAULT_PROFILES.first { it.id == active }
     val ordered = remember(installed, pp) { orderedApps(installed, pp) }
     val watchApps = ordered.take(6)
-    LaunchedEffect(watchApps, pp.pins, installed) {
-        art.ensure(context, watchApps + pp.pins.mapNotNull { installed[it] }, artPx)
+    // The big Favorites panel shows the profile's most-opened app (not one already pinned beside it).
+    val mostUsed = mostOpened(pp.launches, installed.keys, pp.pins.drop(1))
+    val coverRotation = remember(installed) { COVER_ROTATION.map { BRAND_BY_KEY.getValue(it).pkg }.filter { it in installed } }
+    LaunchedEffect(watchApps, pp.pins, mostUsed, installed) {
+        art.ensure(context, watchApps + (pp.pins + listOfNotNull(mostUsed?.first)).mapNotNull { installed[it] }, artPx)
     }
 
-    val launch = { pkg: String -> ui.status = AppCatalog.launch(context, pkg, appName(pkg, installed)) }
+    val launch = { pkg: String ->
+        val problem = AppCatalog.launch(context, pkg, appName(pkg, installed))
+        ui.status = problem
+        if (problem == null) scope.launch { store.recordLaunch(active, pkg) }
+    }
     val onFocusLabel = { s: String -> ui.focused = s }
     val openOptions = { pkg: String -> optionsFor = pkg }
 
@@ -333,14 +344,16 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
 
                     // ---------- Comic page ----------
                     BoardGrid(12, 6, 7.7.dp, Modifier.weight(1f).fillMaxWidth()) {
-                        CoverPanel(pp.cover, installed, profile.name, Modifier.nav("cover"), onFocusLabel, { openOptions(pp.cover) }) { launch(pp.cover) }
+                        CoverPanel(coverRotation, installed, Modifier.nav("cover"), onFocusLabel, openOptions, launch)
 
                         watchApps.forEachIndexed { i, app ->
                             WatchPanel(app, i, pp.customIcons, art.art[app.pkg], Modifier.nav("w$i"), onFocusLabel, { openOptions(app.pkg) }) { launch(app.pkg) }
                         }
 
-                        pp.pins.forEachIndexed { i, pkg ->
-                            PinPanel(pkg, installed, i, profile.name, pp.customIcons, art.art[pkg], Modifier.nav("f$i"), onFocusLabel, { openOptions(pkg) }) { launch(pkg) }
+                        pp.pins.forEachIndexed { i, pinned ->
+                            val pkg = if (i == 0) mostUsed?.first ?: pinned else pinned
+                            val opens = if (i == 0) mostUsed?.second else null
+                            PinPanel(pkg, installed, i, profile.name, pp.customIcons, art.art[pkg], opens, Modifier.nav("f$i"), onFocusLabel, { openOptions(pkg) }) { launch(pkg) }
                         }
 
                         NetworkPanel(net, Modifier.nav("net"), onFocusLabel) { showNetwork = true }
@@ -423,13 +436,6 @@ fun HomeScreen(homePresses: StateFlow<Int>, isHomeApp: () -> Boolean) {
                         SheetButton("Later ▶", Modifier.weight(1f), enabled = isInstalled && pos in 0 until size - 1) { move(Move.LATER) }
                     }
                     SheetButton("Move to front", Modifier.fillMaxWidth(), enabled = isInstalled && pos > 0) { move(Move.FRONT) }
-                    SheetButton(
-                        if (pp.cover == pkg) "This is ${profile.name}'s cover pick" else "Make it ${profile.name}'s cover pick",
-                        Modifier.fillMaxWidth(), enabled = isInstalled && pp.cover != pkg,
-                    ) {
-                        update { it.copy(cover = pkg) }
-                        ui.status = "$name is now ${profile.name}'s pick"
-                    }
                     Spacer(Modifier.height(4.dp))
                     SheetLabel("Pin to ${profile.name}'s favorites panel")
                     pp.pins.chunked(2).forEachIndexed { row, pair ->
@@ -550,9 +556,17 @@ fun Panel(
     )
 }
 
+/**
+ * "Tonight's issue": swaps between the big streaming apps every 5 seconds while the board is on
+ * screen. OK opens whichever app is showing; landing on it restarts the 5-second wait.
+ */
 @Composable
-private fun CoverPanel(pkg: String, installed: Map<String, InstalledApp>, profileName: String, modifier: Modifier, onFocusLabel: (String) -> Unit, onMenu: () -> Unit, onClick: () -> Unit) {
+private fun CoverPanel(
+    rotation: List<String>, installed: Map<String, InstalledApp>, modifier: Modifier,
+    onFocusLabel: (String) -> Unit, onMenu: (String) -> Unit, onOpen: (String) -> Unit,
+) {
     val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     // Decoded once at near display size, 16-bit, to keep memory low.
     val coverArt = remember {
         BitmapFactory.decodeResource(
@@ -560,10 +574,25 @@ private fun CoverPanel(pkg: String, installed: Map<String, InstalledApp>, profil
             BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 },
         ).asImageBitmap()
     }
-    val name = appName(pkg, installed)
-    val isInstalled = installed.containsKey(pkg)
-    val label = if (isInstalled) "$profileName's pick: $name — press OK to open" else "$profileName's pick: $name isn't installed on this TV"
-    Panel(label, modifier, C.ink, onFocusLabel, onMenu, onClick) {
+    var index by remember { mutableStateOf(0) }
+    // Bumped whenever focus arrives, so the next swap waits a full interval after you land on it.
+    var focusTick by remember { mutableStateOf(0) }
+    LaunchedEffect(rotation, focusTick) {
+        if (index >= rotation.size) index = 0
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                delay(5_000)
+                if (rotation.size > 1) index = (index + 1) % rotation.size
+            }
+        }
+    }
+    val pkg = rotation.getOrNull(index)
+    val name = pkg?.let { appName(it, installed) } ?: "No streaming apps"
+    val label = if (pkg != null) "Tonight's issue: $name — press OK to open" else "None of the featured streaming apps are installed"
+    Panel(
+        label, modifier.onFocusChanged { if (it.isFocused) focusTick++ }, C.ink, onFocusLabel,
+        onMenu = { pkg?.let(onMenu) }, onClick = { pkg?.let(onOpen) },
+    ) {
         Image(coverArt, null, Modifier.matchParentSize(), alignment = BiasAlignment(0f, -0.64f), contentScale = ContentScale.Crop)
         Box(
             Modifier.matchParentSize().drawBehind {
@@ -578,11 +607,20 @@ private fun CoverPanel(pkg: String, installed: Map<String, InstalledApp>, profil
         Caption("Tonight's issue", 7.7.sp, Modifier.align(Alignment.TopStart).padding(7.7.dp))
         Burst("Play!", 53.8.dp, 9.6.sp, Modifier.align(Alignment.TopEnd).padding(4.dp))
         Column(Modifier.align(Alignment.BottomStart).padding(14.4.dp)) {
-            Caption("$profileName's pick", 7.2.sp)
+            Caption("Now showing", 7.2.sp)
             Spacer(Modifier.height(4.dp))
             T(name, 34.6.sp, family = Bangers, weight = 400, tracking = 0.04.em, lineHeight = 32.sp)
             Spacer(Modifier.height(4.dp))
-            T(if (isInstalled) "Press OK to open $name" else "$name isn't installed", 10.1.sp, color = if (isInstalled) C.silver else C.red, weight = 600)
+            T(if (pkg != null) "Press OK to open $name" else "Install one from the Play Store", 10.1.sp, color = C.silver, weight = 600)
+            if (rotation.size > 1) {
+                Spacer(Modifier.height(7.dp))
+                // Which app of the rotation is showing.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    rotation.indices.forEach { i ->
+                        Box(Modifier.size(width = if (i == index) 14.dp else 5.dp, height = 5.dp).clip(CircleShape).background(if (i == index) C.red else C.rule))
+                    }
+                }
+            }
         }
     }
 }
@@ -645,7 +683,7 @@ fun AppChip(pkg: String, installed: Map<String, InstalledApp>, custom: Boolean, 
 @Composable
 private fun PinPanel(
     pkg: String, installed: Map<String, InstalledApp>, index: Int, profileName: String, custom: Boolean, art: AppArt?,
-    modifier: Modifier, onFocusLabel: (String) -> Unit, onMenu: () -> Unit, onClick: () -> Unit,
+    opens: Int?, modifier: Modifier, onFocusLabel: (String) -> Unit, onMenu: () -> Unit, onClick: () -> Unit,
 ) {
     val name = appName(pkg, installed)
     val isInstalled = installed.containsKey(pkg)
@@ -658,15 +696,18 @@ private fun PinPanel(
                 Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     AppChip(pkg, installed, custom, art, 26.dp)
                     Spacer(Modifier.width(6.dp))
-                    T("App shortcut", 7.7.sp, color = C.silver, weight = 600)
+                    T(if (opens != null) "Most opened" else "App shortcut", 7.7.sp, color = C.silver, weight = 600)
                 }
                 Column {
                     T(name, 15.4.sp, family = Bangers, weight = 400, tracking = 0.04.em)
                     Spacer(Modifier.height(3.dp))
-                    T(sub, 8.2.sp, color = if (isInstalled) C.silver else C.red)
+                    T(
+                        if (opens != null) "Opened $opens ${if (opens == 1) "time" else "times"}" else sub,
+                        8.2.sp, color = if (isInstalled) C.silver else C.red,
+                    )
                 }
             }
-            Caption("$profileName's favorites", 7.2.sp, Modifier.align(Alignment.TopStart))
+            Caption("$profileName's favorite", 7.2.sp, Modifier.align(Alignment.TopStart))
         } else {
             Row(
                 Modifier.fillMaxSize().padding(horizontal = 9.6.dp, vertical = 5.4.dp),

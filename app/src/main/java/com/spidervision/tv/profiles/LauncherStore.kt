@@ -22,8 +22,10 @@ data class ProfilePrefs(
     val customIcons: Boolean,
     val largeText: Boolean,
     val cover: String,
-    /** Exactly four pinned apps for the Favorites panels. */
+    /** Exactly four pinned apps for the Favorites panels (slot 1 is the fallback for "most opened"). */
     val pins: List<String>,
+    /** How many times this profile opened each app from SpiderVision (package → count). */
+    val launches: Map<String, Int> = emptyMap(),
 )
 
 data class LauncherPrefs(val active: String, val profiles: Map<String, ProfilePrefs>) {
@@ -35,6 +37,9 @@ private fun k(profile: String, name: String) = stringPreferencesKey("$profile.$n
 private fun b(profile: String, name: String) = booleanPreferencesKey("$profile.$name")
 private fun pkgOf(brandKey: String) = BRAND_BY_KEY.getValue(brandKey).pkg
 private fun String.toList() = split(',').filter { it.isNotBlank() }
+private fun String.toCounts(): Map<String, Int> =
+    toList().mapNotNull { e -> e.split('=').takeIf { it.size == 2 }?.let { (p, n) -> n.toIntOrNull()?.let { p to it } } }.toMap()
+private val MIGRATED_V7 = booleanPreferencesKey("migration.v7_tabitha_pins")
 
 /**
  * Saved launcher state (Preferences DataStore, app-private storage). Survives force-stop,
@@ -58,6 +63,7 @@ class LauncherStore(private val context: Context) {
             // Always four slots; fall back to the defaults if storage was ever short.
             List(4) { saved.getOrNull(it) ?: pkgOf(d.pins[it]) }
         },
+        launches = p[k(d.id, "launches")]?.toCounts() ?: emptyMap(),
     )
 
     private fun write(p: MutablePreferences, id: String, v: ProfilePrefs) {
@@ -67,6 +73,28 @@ class LauncherStore(private val context: Context) {
         p[b(id, "largeText")] = v.largeText
         p[k(id, "cover")] = v.cover
         p[k(id, "pins")] = v.pins.joinToString(",")
+        p[k(id, "launches")] = v.launches.entries.joinToString(",") { "${it.key}=${it.value}" }
+    }
+
+    /** Counts one launch of [pkg] for profile [id]; used to find each person's most-opened app. */
+    suspend fun recordLaunch(id: String, pkg: String) =
+        update(id) { it.copy(launches = it.launches + (pkg to (it.launches[pkg] ?: 0) + 1)) }
+
+    /**
+     * One-time fixes to saved layouts. v7: Tabitha's Favorites had Max (already on the Watch
+     * board) and Instagram; the owner asked for YouTube Music and AirCast instead.
+     */
+    suspend fun migrate() {
+        context.dataStore.edit { p ->
+            if (p[MIGRATED_V7] == true) return@edit
+            val key = k("tabitha", "pins")
+            p[key]?.let { saved ->
+                p[key] = saved.toList().map {
+                    when (it) { pkgOf("max") -> pkgOf("ytmusic"); pkgOf("instagram") -> pkgOf("aircast"); else -> it }
+                }.joinToString(",")
+            }
+            p[MIGRATED_V7] = true
+        }
     }
 
     suspend fun setActive(id: String) {
@@ -83,7 +111,7 @@ class LauncherStore(private val context: Context) {
     /** Put one profile back to its defaults. */
     suspend fun reset(id: String) {
         context.dataStore.edit { p ->
-            listOf("favorites", "order", "cover", "pins").forEach { p.remove(k(id, it)) }
+            listOf("favorites", "order", "cover", "pins", "launches").forEach { p.remove(k(id, it)) }
             listOf("customIcons", "largeText").forEach { p.remove(b(id, it)) }
         }
     }

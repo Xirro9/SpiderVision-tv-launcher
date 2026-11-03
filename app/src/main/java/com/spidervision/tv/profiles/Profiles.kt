@@ -20,7 +20,7 @@ data class Profile(
 
 val DEFAULT_PROFILES = listOf(
     Profile("mahin", "Mahin", C.red, "netflix", listOf("spotify", "crunchyroll", "youtube", "ytmusic")),
-    Profile("tabitha", "Tabitha", C.blue, "prime", listOf("hulu", "max", "instagram", "applemusic")),
+    Profile("tabitha", "Tabitha", C.blue, "prime", listOf("hulu", "ytmusic", "aircast", "applemusic")),
     Profile("john", "John", Color(0xFFE9C46A), "max", listOf("youtube", "tubi", "pluto", "spotify")),
     Profile("raph", "Raph", C.silver, "youtube", listOf("crunchyroll", "ytmusic", "roku", "aircast")),
 )

@@ -160,3 +160,14 @@ Pending.
   (Peacock is not).
 - Stock HOME: `com.google.android.apps.tv.launcherx/.home.HomeActivity`. Not to be changed
   without explicit approval (Phase 6).
+
+## Owner fixes (2026-11-03)
+
+| Request | Done | Verified on TV |
+| --- | --- | --- |
+| No duplicate Max; Instagram → AirCast | Tabitha's pins are now Hulu, YouTube Music, AirCast, Apple Music (defaults + one-time migration of saved pins) | ✅ |
+| "…'s favorite" = most-opened app | SpiderVision counts each profile's launches; the big panel shows the most-opened app not already pinned beside it, else slot 1 | ✅ Netflix → "Most opened · Opened 1 time" |
+| Rotating "Tonight's issue" | Netflix → YouTube → Disney+ → Prime Video → Crunchyroll → Max every 5 s while on screen, position dots; OK opens what's showing | ✅ |
+| YouTube Music works | opens; the YouTube Music TV app itself hands off to the YouTube app (Google's behaviour, same from Google TV) | ✅ |
+| Inputs / HDMI | Inputs tile → system picker → HDMI 1 switched (PassthroughPlayerActivity, "No signal": device in standby) → Home back to SpiderVision | ✅ |
+| TV function checks | speaker active, not muted; Chromecast built-in + AirCast running; Bluetooth on with the BLE remote; Wi-Fi on; HDMI 1–3 report a connected device in standby | ✅ (read-only) |
